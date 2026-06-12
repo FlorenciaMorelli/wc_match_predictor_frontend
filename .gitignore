@@ -177,3 +177,4 @@ CLAUDE.md.local
 
 # Local prompts and experiments
 prompts.local/
+node_modules
