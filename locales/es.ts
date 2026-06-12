@@ -83,6 +83,13 @@ export const es: Translations = {
     predict: "Predecir",
     clear: "Limpiar",
     sameTeam: "Elegí dos selecciones distintas.",
+    loadingTitle: "Simulando el partido",
+    loadingSteps: [
+      "Analizando planteles…",
+      "Corriendo 100.000 simulaciones…",
+      "Calculando probabilidades…",
+      "Casi listo…",
+    ],
   },
   teamPicker: {
     placeholder: "Elegir selección",

@@ -6,6 +6,7 @@ import type { Team, PredictResponse } from "@/types";
 import TeamPicker from "./team-picker";
 import ModelPicker, { type Model } from "./model-picker";
 import PredictionResult from "./prediction-result";
+import PredictLoader from "./predict-loader";
 import { fetchTeams, predictMatch } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 
@@ -197,7 +198,20 @@ export default function PredictorSection() {
           )}
         </div>
 
-        {result && (
+        {loading && (
+          <div className="mx-auto mt-2 max-w-2xl">
+            <div className="rounded-2xl border border-line bg-surface p-8">
+              <PredictLoader
+                flagA={teamA?.flag}
+                nameA={teamA?.name_es}
+                flagB={teamB?.flag}
+                nameB={teamB?.name_es}
+              />
+            </div>
+          </div>
+        )}
+
+        {result && !loading && (
           <div id="predictor-result" className="mx-auto mt-2 max-w-2xl scroll-mt-20">
             <div className="rounded-2xl border border-line bg-surface p-8">
               <PredictionResult result={result} />

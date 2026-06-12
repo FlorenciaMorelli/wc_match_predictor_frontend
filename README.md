@@ -67,10 +67,12 @@ npm install
 Crear un archivo `.env.local` (podés partir de `.env.example`):
 
 ```env
-NEXT_PUBLIC_API_URL=https://wc-match-predictor.onrender.com
+API_BASE_URL=https://wc-match-predictor.onrender.com
 ```
 
-Si no se define, el cliente usa `http://localhost:8000` como fallback.
+`API_BASE_URL` es server-side: el navegador llama same-origin a `/api/*` y Next
+reenvía esas requests a ese backend (proxy en `next.config.ts`), evitando CORS.
+La URL del backend no se expone al bundle del cliente.
 
 ---
 
@@ -120,7 +122,7 @@ Para correr ESLint con autofix: `npm run lint -- --fix`.
 
 ## 🌐 API Backend
 
-La app consume la API REST en `NEXT_PUBLIC_API_URL`:
+La app consume la API REST (el navegador la llama same-origin y el proxy de Next la reenvía a `API_BASE_URL`):
 
 - `GET /api/teams` — selecciones disponibles
 - `GET /api/fixture?days_ahead=&include_past=` — fixture
