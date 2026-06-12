@@ -82,6 +82,7 @@ export const en: Translations = {
     calculating: "Calculating...",
     predict: "Predict",
     clear: "Clear",
+    sameTeam: "Pick two different teams.",
   },
   teamPicker: {
     placeholder: "Select team",
