@@ -17,13 +17,37 @@ import type {
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
+// Timeout de seguridad generoso: el predict en cold-start de Render (instancia
+// dormida + 100k simulaciones) puede tardar más de un minuto. Preferimos esperar
+// y, si se pasa, dar un mensaje claro antes que dejar un spinner colgado.
+const REQUEST_TIMEOUT_MS = 120_000;
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
-    ...init,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      headers: { "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      ...init,
+    });
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "TimeoutError") {
+      throw new Error(
+        "El servidor está tardando más de lo normal (puede estar despertando). Esperá unos segundos y reintentá."
+      );
+    }
+    throw new Error(
+      "No pudimos conectar con el servidor. Revisá tu conexión y reintentá."
+    );
+  }
 
   if (!res.ok) {
+    // 503: el predictor todavía se está cargando tras arrancar la instancia.
+    if (res.status === 503) {
+      throw new Error(
+        "El predictor se está iniciando. Probá de nuevo en unos segundos."
+      );
+    }
     const detail = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(
       typeof detail.detail === "string"

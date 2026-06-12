@@ -52,6 +52,7 @@ export type Translations = {
     calculating: string;
     predict: string;
     clear: string;
+    sameTeam: string;
   };
   teamPicker: { placeholder: string; search: string; noResults: string };
   modelPicker: {

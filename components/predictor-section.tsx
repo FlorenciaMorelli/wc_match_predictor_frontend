@@ -31,7 +31,7 @@ export default function PredictorSection() {
   }, []);
 
   async function handlePredict() {
-    if (!teamA || !teamB) return;
+    if (!teamA || !teamB || teamA.id === teamB.id) return;
     setLoading(true);
     setError(null);
     setResult(null);
@@ -64,6 +64,8 @@ export default function PredictorSection() {
     setResult(null);
     setError(null);
   }
+
+  const sameTeam = !!teamA && !!teamB && teamA.id === teamB.id;
 
   return (
     <section id="predictor" className="border-t border-line bg-surface">
@@ -157,7 +159,7 @@ export default function PredictorSection() {
             <button
               type="button"
               onClick={handlePredict}
-              disabled={!teamA || !teamB || loading}
+              disabled={!teamA || !teamB || sameTeam || loading}
               className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand px-7 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {loading ? (
@@ -181,6 +183,12 @@ export default function PredictorSection() {
               </button>
             )}
           </div>
+
+          {sameTeam && (
+            <p className="mt-4 rounded-xl bg-canvas px-4 py-3 text-sm text-ink-muted">
+              {t.predictor.sameTeam}
+            </p>
+          )}
 
           {error && (
             <p className="mt-4 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">

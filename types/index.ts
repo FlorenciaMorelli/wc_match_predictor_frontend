@@ -1,19 +1,22 @@
 // Tipos espejo de los schemas de FastAPI (backend/api/schemas.py).
 // No modificar manualmente — deben mantenerse sincronizados con el backend.
+//
+// NOTA: los IDs de equipo son numéricos (el backend migró de slug a entero).
+// El `id` del partido (FixtureMatch.id) sigue siendo string.
 
 export interface Team {
-  id: string;        // slug estable: "argentina", "korea-republic", "usa"
+  id: number;        // ID numérico estable (ej. 20). Usar para /api/predict.
   canonical: string; // nombre interno en inglés: "Argentina", "Korea Republic"
   name_es: string;   // nombre en español para mostrar al usuario
-  flag: string;      // emoji bandera
+  flag: string;      // código ISO2 para flagcdn.com (ej. "ar")
 }
 
 export interface FixtureMatch {
-  id: string;
+  id: string;          // ID del partido (string, ej. "760440")
   date: string;        // "2026-06-15"
-  time_utc: string;    // "20:00"
-  team_a_id: string;   // slug — usar para llamar a /api/predict
-  team_b_id: string;
+  time_utc: string;    // hora UTC: "20:00" o, a veces, hora suelta "20"
+  team_a_id: number;   // ID numérico — usar para llamar a /api/predict
+  team_b_id: number;
   team_a: string;      // canónico inglés (para debugging)
   team_b: string;
   team_a_es: string;   // nombre en español para mostrar
@@ -29,8 +32,8 @@ export interface FixtureMatch {
 }
 
 export interface PredictRequest {
-  team_a_id: string;   // slug de /api/teams
-  team_b_id: string;
+  team_a_id: number;   // ID numérico de /api/teams
+  team_b_id: number;
   date?: string;       // "YYYY-MM-DD"; default = hoy
   knockout?: boolean;  // true = modo eliminatoria con penales
   model?: "dixon_coles" | "bivariate_poisson" | "poisson_simple";
@@ -44,8 +47,8 @@ export interface ScoreProbability {
 
 export interface PredictResponse {
   // Equipos
-  team_a_id: string;   // slug — clave estable
-  team_b_id: string;
+  team_a_id: number;   // ID numérico — clave estable
+  team_b_id: number;
   team_a: string;      // canónico inglés
   team_b: string;
   team_a_es: string;   // español para mostrar
@@ -67,7 +70,7 @@ export interface PredictResponse {
 
   // Sede
   neutral: boolean;
-  home_team_id: string | null;  // slug del equipo local; null = cancha neutral
+  home_team_id: number | null;  // ID del equipo local; null = cancha neutral
   venue_label: string;          // texto listo para mostrar
 
   // Fuente de datos de plantilla
