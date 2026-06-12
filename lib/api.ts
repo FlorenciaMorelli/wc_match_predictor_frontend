@@ -61,11 +61,3 @@ export async function predictMatch(
     body: JSON.stringify(req),
   });
 }
-
-// ---------------------------------------------------------------------------
-// Health check
-// ---------------------------------------------------------------------------
-
-export async function checkHealth(): Promise<{ status: string; predictor: string }> {
-  return apiFetch("/health");
-}
