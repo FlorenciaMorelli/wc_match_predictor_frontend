@@ -1,7 +1,11 @@
 /**
  * lib/api.ts
  * Cliente tipado para la API FastAPI del predictor WC 2026.
- * El backend corre en http://localhost:8000 por defecto.
+ *
+ * Por defecto el navegador llama a "/api/*" en el mismo origen y Next reenvía
+ * esas requests al backend real (ver el proxy `rewrites` en next.config.ts),
+ * evitando CORS por completo. Para apuntar el navegador directo a un backend
+ * (p. ej. un FastAPI local) definí NEXT_PUBLIC_API_URL.
  */
 
 import type {
@@ -11,7 +15,7 @@ import type {
   Team,
 } from "@/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {

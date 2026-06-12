@@ -7,7 +7,7 @@ import PredictionResult from "./prediction-result";
 import FlagImage from "./flag-image";
 import Modal from "./modal";
 import { useLanguage } from "@/lib/i18n";
-import { formatLocalTime, localTimeZoneName, localDateString } from "@/lib/datetime";
+import { formatLocalTime, localTimeZoneName, localDateString, matchKickoff } from "@/lib/datetime";
 
 const STATUS_STYLE: Record<string, string> = {
   "en juego": "text-emerald-700 bg-emerald-50 dark:text-emerald-300/90 dark:bg-emerald-900/20",
@@ -43,7 +43,7 @@ function MatchCard({ match }: { match: FixtureMatch }) {
     ? (t.fixture.rounds[match.round.toLowerCase()] ?? match.round)
     : "";
   const localTime = formatLocalTime(match.date, match.time_utc, t.meta.dateLocale);
-  const tzName = localTimeZoneName(match.date, t.meta.dateLocale);
+  const tzName = localTimeZoneName(match.date, t.meta.dateLocale, match.time_utc);
   const utcTooltip = match.time_utc ? `${match.time_utc} ${t.fixture.utcSuffix}` : "";
   const isFinished = match.status === "finalizado";
   const hasScore =
@@ -221,6 +221,13 @@ export default function FixtureSection() {
     acc[key].push(m);
     return acc;
   }, {});
+  // Order matches within each local day by their actual kickoff instant.
+  // Matches without a usable time sort last (keeping their relative order).
+  const kickoffMs = (m: FixtureMatch) =>
+    matchKickoff(m.date, m.time_utc)?.getTime() ?? Number.POSITIVE_INFINITY;
+  for (const date of Object.keys(grouped)) {
+    grouped[date].sort((a, b) => kickoffMs(a) - kickoffMs(b));
+  }
   const sortedDates = Object.keys(grouped).sort();
 
   function relativeLabel(dateStr: string): string | null {
