@@ -1,0 +1,51 @@
+name: Guard main
+
+# Asegura que `main` solo avance hacia commits que YA están en `staging`.
+# Corre después de cada push a main: si el commit nuevo no está contenido en
+# staging, el check falla (X roja + notificación).
+#
+# Importante: las Actions corren DESPUÉS de que el push fue aceptado, así que
+# esto NO revierte el push por sí solo — es una red de seguridad fuerte que
+# avisa fuerte. Combinalo con el ruleset de `main` (restringir quién pushea +
+# linear history) y con `git merge --ff-only staging` del lado del cliente.
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (historial completo)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: main solo puede avanzar desde staging
+        run: |
+          set -euo pipefail
+          NEW_SHA="${{ github.event.after }}"
+
+          # Push de borrado de rama: no hay commit que validar.
+          if [ "$NEW_SHA" = "0000000000000000000000000000000000000000" ]; then
+            echo "Borrado de rama, se omite."
+            exit 0
+          fi
+
+          git fetch --no-tags origin staging
+          STAGING_SHA="$(git rev-parse FETCH_HEAD)"
+
+          echo "Commit empujado a main: $NEW_SHA"
+          echo "Tip de staging:         $STAGING_SHA"
+
+          if git merge-base --is-ancestor "$NEW_SHA" "$STAGING_SHA"; then
+            echo "✅ El commit está contenido en staging. OK."
+          else
+            echo "::error::El commit $NEW_SHA NO está en staging. 'main' solo puede avanzar desde 'staging' (fast-forward)."
+            exit 1
+          fi
