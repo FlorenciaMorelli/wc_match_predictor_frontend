@@ -17,6 +17,11 @@ function scoreWinnerColor(a: number, b: number): string {
   return a > b ? TEAM_A : TEAM_B;
 }
 
+// Porcentaje con hasta dos decimales (sin ceros sobrantes): 0.1643 → "16.43%", 0.1 → "10%".
+function formatPct(value: number): string {
+  return `${Number((value * 100).toFixed(2))}%`;
+}
+
 function WinnerLegend({ teamA, teamB }: { teamA: string; teamB: string }) {
   const { t } = useLanguage();
   const items: [string, string][] = [
@@ -75,7 +80,7 @@ function Scorelines({
                 {s.score_a}–{s.score_b}
               </span>
               <span className="mt-0.5 text-xs text-ink-subtle">
-                {Math.round(s.probability * 100)}%
+                {formatPct(s.probability)}
               </span>
             </div>
           );
@@ -149,21 +154,28 @@ export default function PredictionResult({ result }: Props) {
     p_advance_b,
   } = result;
 
-  const drawMostLikely = p_draw >= p_a && p_draw >= p_b;
-  const favorsA = p_a >= p_b;
+  const topScore = top_scorelines[0];
+
+  // El "resultado más probable" debe respetar el marcador más probable:
+  // si el top scoreline es un empate (p. ej. 0–0), el titular es Empate,
+  // aunque el agregado 1X2 favorezca a un equipo. Sin scoreline, caemos al 1X2.
+  const drawMostLikely = topScore
+    ? topScore.score_a === topScore.score_b
+    : p_draw >= p_a && p_draw >= p_b;
+  const favorsA = topScore ? topScore.score_a > topScore.score_b : p_a >= p_b;
   const winnerName = drawMostLikely ? t.result.draw : favorsA ? team_a_es : team_b_es;
   const winnerFlag = drawMostLikely ? null : favorsA ? flag_a : flag_b;
   const winnerHeadline = drawMostLikely
     ? t.result.draw
     : t.result.winsTeamHeadline(favorsA ? team_a_es : team_b_es);
-  const winnerProb = drawMostLikely ? p_draw : Math.max(p_a, p_b);
+  // Probabilidad del desenlace mostrado (coherente con el titular).
+  const winnerProb = drawMostLikely ? p_draw : favorsA ? p_a : p_b;
   const confidence =
     winnerProb >= 0.6
       ? t.result.confidenceHigh
       : winnerProb >= 0.45
       ? t.result.confidenceMedium
       : t.result.confidenceLow;
-  const topScore = top_scorelines[0];
 
   const isHome = !neutral && home_team_id != null;
 
@@ -209,7 +221,7 @@ export default function PredictionResult({ result }: Props) {
               <div className="mb-1.5 flex justify-between text-sm">
                 <span className="font-medium text-ink">{label}</span>
                 <span className="font-semibold" style={{ color }}>
-                  {Math.round(value * 100)}%
+                  {formatPct(value)}
                 </span>
               </div>
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-line">
@@ -258,7 +270,7 @@ export default function PredictionResult({ result }: Props) {
                 {t.result.advancesTeamLabel(team_a_es)}
               </p>
               <p className="text-2xl font-bold" style={{ color: TEAM_A }}>
-                {Math.round(p_advance_a * 100)}%
+                {formatPct(p_advance_a)}
               </p>
             </div>
             <div
@@ -272,7 +284,7 @@ export default function PredictionResult({ result }: Props) {
                 {t.result.advancesTeamLabel(team_b_es)}
               </p>
               <p className="text-2xl font-bold" style={{ color: TEAM_B }}>
-                {Math.round(p_advance_b * 100)}%
+                {formatPct(p_advance_b)}
               </p>
             </div>
           </div>
@@ -280,7 +292,7 @@ export default function PredictionResult({ result }: Props) {
             <p className="text-center text-xs text-ink-muted">
               {t.result.penaltiesProbability}{" "}
               <span className="font-semibold text-ink">
-                {Math.round(p_penalties * 100)}%
+                {formatPct(p_penalties)}
               </span>
             </p>
           )}
@@ -326,7 +338,7 @@ export default function PredictionResult({ result }: Props) {
             <div className="min-w-0">
               <p className="truncate text-2xl font-bold text-gold">{winnerHeadline}</p>
               <p className="mt-0.5 text-sm text-ink-muted">
-                {Math.round(winnerProb * 100)}% · {t.result.confidencePhrase(confidence)}
+                {formatPct(winnerProb)} · {t.result.confidencePhrase(confidence)}
               </p>
             </div>
           </div>
@@ -340,7 +352,7 @@ export default function PredictionResult({ result }: Props) {
                 {topScore.score_a}–{topScore.score_b}
               </p>
               <p className="text-xs text-ink-muted">
-                {Math.round(topScore.probability * 100)}%
+                {formatPct(topScore.probability)}
               </p>
             </div>
           )}
