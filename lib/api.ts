@@ -2,10 +2,9 @@
  * lib/api.ts
  * Cliente tipado para la API FastAPI del predictor WC 2026.
  *
- * Por defecto el navegador llama a "/api/*" en el mismo origen y Next reenvía
- * esas requests al backend real (ver el proxy `rewrites` en next.config.ts),
- * evitando CORS por completo. Para apuntar el navegador directo a un backend
- * (p. ej. un FastAPI local) definí NEXT_PUBLIC_API_URL.
+ * El navegador siempre llama a "/api/*" en el MISMO origen; Next reenvía esas
+ * requests al backend real (API_BASE_URL) vía el proxy `rewrites` de
+ * next.config.ts. Así no hay CORS y la URL del backend no queda en el bundle.
  */
 
 import type {
@@ -15,17 +14,15 @@ import type {
   Team,
 } from "@/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
-
-// Timeout de seguridad generoso: el predict en cold-start de Render (instancia
-// dormida + 100k simulaciones) puede tardar más de un minuto. Preferimos esperar
-// y, si se pasa, dar un mensaje claro antes que dejar un spinner colgado.
-const REQUEST_TIMEOUT_MS = 120_000;
+// Timeout de seguridad generoso: el predict puede tardar ~150s en Render. Lo
+// dejamos por ENCIMA del proxyTimeout de next.config (180s) para que, si algo se
+// cuelga, el cliente reciba el error del proxy en vez de abortar antes de tiempo.
+const REQUEST_TIMEOUT_MS = 190_000;
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(`${BASE_URL}${path}`, {
+    res = await fetch(path, {
       headers: { "Content-Type": "application/json" },
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       ...init,
@@ -46,6 +43,12 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     if (res.status === 503) {
       throw new Error(
         "El predictor se está iniciando. Probá de nuevo en unos segundos."
+      );
+    }
+    // 502/504: el proxy (Next o Vercel) cortó esperando al backend lento.
+    if (res.status === 502 || res.status === 504) {
+      throw new Error(
+        "El servidor tardó demasiado en responder. Reintentá en un momento."
       );
     }
     const detail = await res.json().catch(() => ({ detail: res.statusText }));

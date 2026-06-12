@@ -53,6 +53,8 @@ export type Translations = {
     predict: string;
     clear: string;
     sameTeam: string;
+    loadingTitle: string;
+    loadingSteps: string[];
   };
   teamPicker: { placeholder: string; search: string; noResults: string };
   modelPicker: {

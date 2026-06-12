@@ -4,6 +4,7 @@ import { useState, useEffect, useId } from "react";
 import type { FixtureMatch, PredictResponse } from "@/types";
 import { fetchFixture, predictMatch } from "@/lib/api";
 import PredictionResult from "./prediction-result";
+import PredictLoader from "./predict-loader";
 import FlagImage from "./flag-image";
 import Modal from "./modal";
 import { useLanguage } from "@/lib/i18n";
@@ -163,9 +164,12 @@ function MatchCard({ match }: { match: FixtureMatch }) {
         }
       >
         {loading && (
-          <div className="flex justify-center py-16">
-            <span className="h-7 w-7 animate-spin rounded-full border-2 border-line border-t-brand" />
-          </div>
+          <PredictLoader
+            flagA={match.flag_a}
+            nameA={match.team_a_es}
+            flagB={match.flag_b}
+            nameB={match.team_b_es}
+          />
         )}
         {error && (
           <div className="py-8">
