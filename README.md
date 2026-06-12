@@ -1,51 +1,49 @@
-# ⚽ WC Match Predictor Frontend
+# ⚽ WC Match Predictor — Frontend
 
-Frontend de **WC Match Predictor**, una aplicación para visualizar y predecir resultados del Mundial de Fútbol utilizando modelos de Machine Learning.
+Frontend de **WC Match Predictor**, una aplicación para visualizar el fixture y predecir resultados del Mundial de Fútbol 2026 utilizando modelos estadísticos (Dixon-Coles, Poisson bivariado y Poisson simple).
 
-Este proyecto consume la API del repositorio backend:
+Consume la API del backend:
 
-- Backend Repo: https://github.com/JuantMartinez17/wc_match_predictor
-- API Docs: https://wc-match-predictor.onrender.com/docs
-
----
-
-# 🚀 Tecnologías
-
-- Next.js 15
-- React 19
-- TypeScript
-- Tailwind CSS
-- Axios
-- ESLint
-- Prettier
+- **Backend:** https://github.com/JuantMartinez17/wc_match_predictor
+- **API Docs:** https://wc-match-predictor.onrender.com/docs
 
 ---
 
-# 📂 Estructura del proyecto
+## 🚀 Stack
+
+- **Next.js 16** (App Router, React Server Components)
+- **React 19**
+- **TypeScript**
+- **Tailwind CSS v4**
+- **fetch** nativo para el cliente HTTP (sin librerías externas)
+- **ESLint** + **Prettier**
+
+---
+
+## 📂 Estructura
 
 ```text
-src/
-│
-├── app/                # App Router de Next.js
-├── components/         # Componentes reutilizables
-├── features/           # Funcionalidades agrupadas por dominio
-├── services/           # Comunicación con la API
-├── lib/                # Helpers y utilidades
-├── hooks/              # Custom hooks
-├── types/              # Definiciones TypeScript
-├── constants/          # Constantes globales
-├── styles/             # Estilos adicionales
-└── assets/             # Recursos estáticos
+.
+├── app/          # App Router: layout, página principal, estilos globales
+├── components/   # Componentes de UI (kebab-case)
+├── providers/    # Context providers de React (idioma)
+├── lib/          # Cliente API, i18n, stores de tema/idioma, helpers de fecha
+├── locales/      # Diccionarios es/en + tipos de traducción
+└── types/        # Tipos TypeScript compartidos (espejo de los schemas del backend)
 ```
+
+> Estructura plana e intencional para una app de una sola página. No se usa
+> arquitectura por features ni carpeta `src/`.
+
+**Convención de nombres:** los componentes usan `kebab-case` (`fixture-section.tsx`,
+`team-picker.tsx`).
 
 ---
 
-# 🛠 Requisitos
+## 🛠 Requisitos
 
-- Node.js 22+
-- npm 10+
-
-Verificar versiones:
+- Node.js **22+**
+- npm **10+**
 
 ```bash
 node -v
@@ -54,305 +52,103 @@ npm -v
 
 ---
 
-# 📥 Instalación
-
-Clonar el repositorio:
+## 📥 Instalación
 
 ```bash
-git clone https://github.com/<usuario>/wc_match_predictor_frontend.git
-
+git clone https://github.com/FlorenciaMorelli/wc_match_predictor_frontend.git
 cd wc_match_predictor_frontend
-```
-
-Instalar dependencias:
-
-```bash
 npm install
 ```
 
 ---
 
-# ⚙ Variables de entorno
+## ⚙ Variables de entorno
 
-Crear un archivo:
-
-```text
-.env.local
-```
-
-con:
+Crear un archivo `.env.local` (podés partir de `.env.example`):
 
 ```env
 NEXT_PUBLIC_API_URL=https://wc-match-predictor.onrender.com
 ```
 
+Si no se define, el cliente usa `http://localhost:8000` como fallback.
+
 ---
 
-# ▶ Ejecutar en desarrollo
+## ▶ Desarrollo
 
 ```bash
 npm run dev
 ```
 
-La aplicación estará disponible en:
-
-```text
-http://localhost:3000
-```
+Disponible en http://localhost:3000
 
 ---
 
-# 🏗 Build de producción
-
-Generar build:
+## 🏗 Producción
 
 ```bash
 npm run build
-```
-
-Ejecutar:
-
-```bash
 npm run start
 ```
 
 ---
 
-# 🧹 Calidad de código
-
-Ejecutar ESLint:
-
-```bash
-npm run lint
-```
-
-Corregir automáticamente:
-
-```bash
-npm run lint --fix
-```
-
----
-
-# 📦 Scripts disponibles
+## 📦 Scripts
 
 | Script | Descripción |
-|----------|-------------|
-| npm run dev | Inicia el servidor de desarrollo |
-| npm run build | Genera la versión de producción |
-| npm run start | Ejecuta la aplicación compilada |
-| npm run lint | Ejecuta ESLint |
-| npm run lint --fix | Corrige errores automáticamente |
+|--------|-------------|
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` | Build de producción |
+| `npm run start` | Ejecuta el build de producción |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | Chequeo de tipos con `tsc --noEmit` |
+| `npm run format` | Formatea el código con Prettier |
+| `npm run format:check` | Verifica el formato sin escribir |
+
+Para correr ESLint con autofix: `npm run lint -- --fix`.
 
 ---
 
-# 🌐 API Backend
+## ✨ Características
 
-La aplicación consume la API REST:
-
-```text
-https://wc-match-predictor.onrender.com
-```
-
-Documentación Swagger:
-
-```text
-https://wc-match-predictor.onrender.com/docs
-```
+- **Predictor de partidos:** elegí dos selecciones, fecha, modelo y modo eliminatoria.
+- **Fixture:** próximos partidos agrupados por día, con predicción on-demand.
+- **i18n:** español / inglés (toggle en la barra superior).
+- **Tema claro / oscuro:** con persistencia y sin flash de color en la carga.
 
 ---
 
-# 🏛 Arquitectura
+## 🌐 API Backend
 
-Se utiliza una arquitectura orientada a features:
+La app consume la API REST en `NEXT_PUBLIC_API_URL`:
 
-```text
-src/
-│
-├── features
-│   ├── matches
-│   ├── predictions
-│   ├── teams
-│   └── statistics
-│
-├── components
-├── services
-├── hooks
-├── types
-└── lib
-```
+- `GET /api/teams` — selecciones disponibles
+- `GET /api/fixture?days_ahead=&include_past=` — fixture
+- `POST /api/predict` — predicción de un partido
 
-Cada feature debe contener:
-
-```text
-feature-name/
-│
-├── components/
-├── hooks/
-├── services/
-├── types/
-└── index.ts
-```
+Documentación Swagger: https://wc-match-predictor.onrender.com/docs
 
 ---
 
-# 📋 Convenciones
+## 🌳 Flujo de trabajo
 
-## Componentes
-
-PascalCase:
-
-```text
-MatchCard.tsx
-PredictionTable.tsx
-TeamSelector.tsx
-```
-
----
-
-## Hooks
-
-camelCase:
-
-```text
-useMatches.ts
-usePredictions.ts
-```
-
----
-
-## Types
-
-```text
-match.ts
-team.ts
-prediction.ts
-```
-
----
-
-## Services
-
-```text
-matchService.ts
-teamService.ts
-predictionService.ts
-```
-
----
-
-# 🧪 Ejemplo de service
-
-```ts
-import axios from "axios";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-export async function getTeams() {
-    const response = await axios.get(`${API_URL}/teams`);
-    return response.data;
-}
-```
-
----
-
-# 🌳 Flujo de trabajo con Git
-
-Crear rama:
-
-```bash
-git checkout -b feature/team-selector
-```
-
-Realizar cambios:
-
-```bash
-git add .
-git commit -m "feat: add team selector component"
-```
-
-Subir cambios:
-
-```bash
-git push origin feature/team-selector
-```
-
-Abrir Pull Request hacia:
-
-```text
-main
-```
-
----
-
-# Commit Convention
-
-Se recomienda Conventional Commits.
-
-### Feature
-
-```text
-feat: add prediction table
-```
-
-### Bugfix
-
-```text
-fix: correct team sorting
-```
-
-### Refactor
-
-```text
-refactor: simplify api service
-```
-
-### Documentation
-
-```text
-docs: update README
-```
-
-### Styling
-
-```text
-style: improve spacing on cards
-```
-
-### Tests
-
-```text
-test: add prediction service tests
-```
-
----
-
-# 🚀 Deploy
-
-El frontend está pensado para desplegarse en:
-
-- Vercel
-
-y consumir el backend desplegado en:
-
-- Render
-
----
-
-# 🤝 Contribuciones
-
-1. Crear una rama desde `main`.
+1. Crear una rama desde `main` (`git checkout -b feat/mi-cambio`).
 2. Implementar los cambios.
-3. Verificar que el proyecto compile correctamente.
-4. Ejecutar ESLint.
-5. Abrir un Pull Request.
+3. Verificar: `npm run lint && npm run typecheck && npm run build`.
+4. Abrir un Pull Request hacia `main`.
+
+Se usa [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`,
+`refactor:`, `docs:`, `style:`, `test:`, `chore:`).
 
 ---
 
-# 📄 Licencia
+## 🚀 Deploy
 
-MIT
+- **Frontend:** Vercel
+- **Backend:** Render
 
 ---
 
-Desarrollado con Next.js y TypeScript.
+## 📄 Licencia
+
+[MIT](./LICENSE)
