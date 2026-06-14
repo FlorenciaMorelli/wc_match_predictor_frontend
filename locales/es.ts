@@ -59,7 +59,8 @@ export const es: Translations = {
     utcSuffix: "UTC",
     status: {
       "en juego": "En juego",
-      descanso: "Descanso",
+      descanso: "Entretiempo",
+      STATUS_HALFTIME: "Entretiempo",
       finalizado: "Finalizado",
       postergado: "Postergado",
       cancelado: "Cancelado",

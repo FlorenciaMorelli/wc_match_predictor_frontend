@@ -9,15 +9,26 @@ import FlagImage from "./flag-image";
 import Modal from "./modal";
 import { useLanguage } from "@/lib/i18n";
 import { formatLocalTime, localTimeZoneName, localDateString, matchKickoff } from "@/lib/datetime";
+import { cityForVenue } from "@/lib/venues";
+
+const LIVE_STATUSES = new Set([
+  "en juego", "STATUS_FIRST_HALF", "STATUS_SECOND_HALF", "descanso", "STATUS_HALFTIME",
+]);
+
+const FINISHED_STATUSES = new Set(["finalizado", "STATUS_FULL_TIME"]);
 
 const STATUS_STYLE: Record<string, string> = {
-  "en juego": "text-emerald-700 bg-emerald-50 dark:text-emerald-300/90 dark:bg-emerald-900/20",
-  descanso:   "text-amber-700  bg-amber-50  dark:text-amber-300/90  dark:bg-amber-900/20",
-  finalizado: "text-ink-muted bg-canvas",
-  postergado: "text-danger bg-danger-soft",
-  cancelado:  "text-danger bg-danger-soft",
-  suspendido: "text-danger bg-danger-soft",
-  programado: "text-ink-muted bg-canvas",
+  "en juego":         "text-emerald-700 bg-emerald-50 dark:text-emerald-300/90 dark:bg-emerald-900/20",
+  STATUS_FIRST_HALF:  "text-emerald-700 bg-emerald-50 dark:text-emerald-300/90 dark:bg-emerald-900/20",
+  STATUS_SECOND_HALF: "text-emerald-700 bg-emerald-50 dark:text-emerald-300/90 dark:bg-emerald-900/20",
+  descanso:           "text-amber-700  bg-amber-50  dark:text-amber-300/90  dark:bg-amber-900/20",
+  STATUS_HALFTIME:    "text-amber-700  bg-amber-50  dark:text-amber-300/90  dark:bg-amber-900/20",
+  finalizado:         "text-ink-muted bg-canvas",
+  STATUS_FULL_TIME:   "text-ink-muted bg-canvas",
+  postergado:         "text-danger bg-danger-soft",
+  cancelado:          "text-danger bg-danger-soft",
+  suspendido:         "text-danger bg-danger-soft",
+  programado:         "text-ink-muted bg-canvas",
 };
 
 // Ventana del fixture: 30 días cubre toda la fase de grupos desde el arranque.
@@ -122,14 +133,14 @@ function groupMatchdayMap(groupMatches: FixtureMatch[]): Map<string, number> {
 }
 
 function MatchCard({ match }: { match: FixtureMatch }) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [prediction, setPrediction] = useState<PredictResponse | null>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const titleId = useId();
 
-  const isLive = match.status === "en juego";
+  const isLive = LIVE_STATUSES.has(match.status);
   const statusStyle = STATUS_STYLE[match.status] ?? "text-ink-muted bg-canvas";
   const statusLabel = t.fixture.status[match.status] ?? match.status;
   const roundLabel = match.round
@@ -138,7 +149,12 @@ function MatchCard({ match }: { match: FixtureMatch }) {
   const localTime = formatLocalTime(match.date, match.time_utc, t.meta.dateLocale);
   const tzName = localTimeZoneName(match.date, t.meta.dateLocale, match.time_utc);
   const utcTooltip = match.time_utc ? `${match.time_utc} ${t.fixture.utcSuffix}` : "";
-  const isFinished = match.status === "finalizado";
+  const isFinished = FINISHED_STATUSES.has(match.status);
+  // "Ver análisis" si el partido ya arrancó (en vivo) o terminó; si no, "Ver predicción".
+  const hasStarted = isLive || isFinished;
+  // Ciudad del estadio (mapa estático de los 16 venues WC2026). null si el backend
+  // manda un estadio no mapeado → se muestra solo el estadio, sin romper el layout.
+  const city = cityForVenue(match.venue, locale);
   const hasScore =
     match.score_a !== "" &&
     match.score_b !== "" &&
@@ -167,20 +183,20 @@ function MatchCard({ match }: { match: FixtureMatch }) {
   return (
     <>
       <div
-        className={`overflow-hidden rounded-2xl border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] ${
+        className={`flex h-full flex-col overflow-hidden rounded-2xl border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] ${
           isLive ? "border-danger ring-1 ring-danger" : "border-line"
         }`}
       >
-        <div className="p-6">
+        <div className="flex-1 p-6">
           <div className="mb-4 flex items-center justify-between">
             <span className="text-xs text-ink-subtle" title={utcTooltip}>
               {localTime && tzName ? `${localTime} ${tzName}` : localTime}
             </span>
             <span
-              className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyle}`}
+              className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyle}${isLive ? " motion-safe:animate-pulse" : ""}`}
             >
               {isLive && (
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                <span className="h-1.5 w-1.5 motion-safe:animate-pulse rounded-full bg-current" />
               )}
               {statusLabel}
             </span>
@@ -189,9 +205,11 @@ function MatchCard({ match }: { match: FixtureMatch }) {
           <div className="flex items-center justify-between gap-2">
             <div className="flex flex-1 flex-col items-center gap-2">
               <FlagImage iso2={match.flag_a} name={match.team_a_es} size="md" />
-              <span className="text-center text-sm font-semibold leading-tight text-ink">
-                {match.team_a_es}
-              </span>
+              <div className="flex min-h-[2.5rem] w-full items-start justify-center">
+                <span title={match.team_a_es} className="line-clamp-2 text-center text-sm font-semibold leading-tight text-ink">
+                  {match.team_a_es}
+                </span>
+              </div>
             </div>
 
             <div className="flex flex-col items-center gap-0.5">
@@ -208,15 +226,17 @@ function MatchCard({ match }: { match: FixtureMatch }) {
 
             <div className="flex flex-1 flex-col items-center gap-2">
               <FlagImage iso2={match.flag_b} name={match.team_b_es} size="md" />
-              <span className="text-center text-sm font-semibold leading-tight text-ink">
-                {match.team_b_es}
-              </span>
+              <div className="flex min-h-[2.5rem] w-full items-start justify-center">
+                <span title={match.team_b_es} className="line-clamp-2 text-center text-sm font-semibold leading-tight text-ink">
+                  {match.team_b_es}
+                </span>
+              </div>
             </div>
           </div>
 
-          {(roundLabel || match.venue) && (
+          {(city || match.venue) && (
             <p className="mt-3 text-center text-xs text-ink-subtle">
-              {[roundLabel, match.venue].filter(Boolean).join(" · ")}
+              {[city, match.venue].filter(Boolean).join(" · ")}
             </p>
           )}
         </div>
@@ -227,7 +247,7 @@ function MatchCard({ match }: { match: FixtureMatch }) {
             onClick={handleOpen}
             className="w-full rounded-sm text-center text-xs font-semibold uppercase tracking-widest text-brand transition-colors hover:text-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
           >
-            {isFinished ? t.fixture.viewAnalysis : t.fixture.viewPrediction}
+            {hasStarted ? t.fixture.viewAnalysis : t.fixture.viewPrediction}
           </button>
         </div>
       </div>
@@ -314,7 +334,7 @@ function MatchDays({ matches }: { matches: FixtureMatch[] }) {
               )}
               {formatDay(date, t.meta.dateLocale)}
             </h4>
-            <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {grouped[date].map((m) => (
                 <MatchCard key={m.id} match={m} />
               ))}
