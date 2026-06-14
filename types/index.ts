@@ -96,4 +96,6 @@ export type MatchStatus =
   | "finalizado"
   | "postergado"
   | "cancelado"
-  | "suspendido";
+  | "suspendido"
+  | "STATUS_FIRST_HALF"
+  | "STATUS_SECOND_HALF";
