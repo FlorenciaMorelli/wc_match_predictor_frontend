@@ -23,6 +23,9 @@ export type Translations = {
     sectionLabel: string;
     heading: string;
     rounds: Record<string, string>;
+    matchday: (n: number) => string;
+    pendingTitle: string;
+    pendingDescription: string;
     description: string;
     emptyState: string;
     loadMore: string;

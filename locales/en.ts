@@ -41,6 +41,9 @@ export const en: Translations = {
       final: "Final",
       "third-place": "Third Place",
     },
+    matchday: (n: number) => `Matchday ${n}`,
+    pendingTitle: "To be defined",
+    pendingDescription: "Matchups are set as the tournament progresses.",
     description:
       'Tap "View prediction" on any match to see the full analysis.',
     emptyState: "No matches scheduled in this period.",
@@ -63,6 +66,8 @@ export const en: Translations = {
       suspendido: "Suspended",
       programado: "Scheduled",
       STATUS_FULL_TIME: "Full time",
+      STATUS_FIRST_HALF: "First half",
+      STATUS_SECOND_HALF: "Second half"
     },
   },
   predictor: {

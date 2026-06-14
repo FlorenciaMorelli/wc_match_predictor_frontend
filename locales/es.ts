@@ -41,6 +41,9 @@ export const es: Translations = {
       final: "Final",
       "third-place": "Tercer puesto",
     },
+    matchday: (n: number) => `Fecha ${n}`,
+    pendingTitle: "Por definir",
+    pendingDescription: "Los cruces se definen al avanzar el torneo.",
     description:
       'Tocá "Ver predicción" en cualquier partido y mirá el análisis completo.',
     emptyState: "No hay partidos programados en este período.",
@@ -63,6 +66,8 @@ export const es: Translations = {
       suspendido: "Suspendido",
       programado: "Programado",
       STATUS_FULL_TIME: "Finalizado",
+      STATUS_FIRST_HALF: "Primer tiempo",
+      STATUS_SECOND_HALF: "Segundo tiempo"
     },
   },
   predictor: {
