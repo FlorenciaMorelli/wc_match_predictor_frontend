@@ -102,4 +102,6 @@ export type MatchStatus =
   | "cancelado"
   | "suspendido"
   | "STATUS_FIRST_HALF"
-  | "STATUS_SECOND_HALF";
+  | "STATUS_SECOND_HALF"
+  | "STATUS_HALFTIME"
+  | "STATUS_FULL_TIME";

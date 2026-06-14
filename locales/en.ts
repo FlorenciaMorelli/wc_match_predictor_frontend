@@ -60,6 +60,7 @@ export const en: Translations = {
     status: {
       "en juego": "In play",
       descanso: "Half-time",
+      STATUS_HALFTIME: "Half-time",
       finalizado: "Full time",
       postergado: "Postponed",
       cancelado: "Cancelled",
