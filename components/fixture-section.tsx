@@ -277,7 +277,9 @@ function MatchCard({ match }: { match: FixtureMatch }) {
             </button>
           </div>
         )}
-        {prediction && !loading && <PredictionResult result={prediction} />}
+        {prediction && !loading && (
+          <PredictionResult result={prediction} matchStatus={match.status} />
+        )}
       </Modal>
     </>
   );
