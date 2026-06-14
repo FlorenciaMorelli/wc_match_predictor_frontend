@@ -74,9 +74,15 @@ export async function fetchTeams(): Promise<Team[]> {
 // Fixture
 // ---------------------------------------------------------------------------
 
+// Días pasados a incluir en el fixture. 40 cubre desde el primer día del Mundial
+// (2026-06-11): el backend nunca consulta días previos a esa fecha, así que pedir
+// un número alto es seguro (no dispara llamadas de más) y los días ya jugados se
+// cachean 24 h. Esto es lo que hace visibles los partidos finalizados en la grilla.
+const FIXTURE_INCLUDE_PAST = 40;
+
 export async function fetchFixture(daysAhead = 10): Promise<FixtureMatch[]> {
   return apiFetch<FixtureMatch[]>(
-    `/api/fixture?days_ahead=${daysAhead}&include_past=1`
+    `/api/fixture?days_ahead=${daysAhead}&include_past=${FIXTURE_INCLUDE_PAST}`
   );
 }
 
