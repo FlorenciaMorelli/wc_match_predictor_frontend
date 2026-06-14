@@ -7,7 +7,7 @@ import PredictionResult from "./prediction-result";
 import PredictLoader from "./predict-loader";
 import FlagImage from "./flag-image";
 import Modal from "./modal";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, teamName } from "@/lib/i18n";
 import { formatLocalTime, localTimeZoneName, localDateString, matchKickoff } from "@/lib/datetime";
 import { cityForVenue } from "@/lib/venues";
 
@@ -155,6 +155,8 @@ function MatchCard({ match }: { match: FixtureMatch }) {
   // Ciudad del estadio (mapa estático de los 16 venues WC2026). null si el backend
   // manda un estadio no mapeado → se muestra solo el estadio, sin romper el layout.
   const city = cityForVenue(match.venue, locale);
+  const nameA = teamName(match.team_a, match.team_a_es, locale);
+  const nameB = teamName(match.team_b, match.team_b_es, locale);
   const hasScore =
     match.score_a !== "" &&
     match.score_b !== "" &&
@@ -204,10 +206,10 @@ function MatchCard({ match }: { match: FixtureMatch }) {
 
           <div className="flex items-center justify-between gap-2">
             <div className="flex flex-1 flex-col items-center gap-2">
-              <FlagImage iso2={match.flag_a} name={match.team_a_es} size="md" />
+              <FlagImage iso2={match.flag_a} name={nameA} size="md" />
               <div className="flex min-h-[2.5rem] w-full items-start justify-center">
-                <span title={match.team_a_es} className="line-clamp-2 text-center text-sm font-semibold leading-tight text-ink">
-                  {match.team_a_es}
+                <span title={nameA} className="line-clamp-2 text-center text-sm font-semibold leading-tight text-ink">
+                  {nameA}
                 </span>
               </div>
             </div>
@@ -225,10 +227,10 @@ function MatchCard({ match }: { match: FixtureMatch }) {
             </div>
 
             <div className="flex flex-1 flex-col items-center gap-2">
-              <FlagImage iso2={match.flag_b} name={match.team_b_es} size="md" />
+              <FlagImage iso2={match.flag_b} name={nameB} size="md" />
               <div className="flex min-h-[2.5rem] w-full items-start justify-center">
-                <span title={match.team_b_es} className="line-clamp-2 text-center text-sm font-semibold leading-tight text-ink">
-                  {match.team_b_es}
+                <span title={nameB} className="line-clamp-2 text-center text-sm font-semibold leading-tight text-ink">
+                  {nameB}
                 </span>
               </div>
             </div>
@@ -259,9 +261,9 @@ function MatchCard({ match }: { match: FixtureMatch }) {
         header={
           <div className="min-w-0">
             <h3 id={titleId} className="truncate text-base font-semibold text-ink">
-              {match.team_a_es}{" "}
+              {nameA}{" "}
               <span className="font-normal text-ink-subtle">{t.fixture.vs}</span>{" "}
-              {match.team_b_es}
+              {nameB}
             </h3>
             <p className="mt-0.5 truncate text-xs capitalize text-ink-subtle">
               {[
@@ -278,9 +280,9 @@ function MatchCard({ match }: { match: FixtureMatch }) {
         {loading && (
           <PredictLoader
             flagA={match.flag_a}
-            nameA={match.team_a_es}
+            nameA={nameA}
             flagB={match.flag_b}
-            nameB={match.team_b_es}
+            nameB={nameB}
           />
         )}
         {error && (
@@ -298,7 +300,12 @@ function MatchCard({ match }: { match: FixtureMatch }) {
           </div>
         )}
         {prediction && !loading && (
-          <PredictionResult result={prediction} matchStatus={match.status} />
+          <PredictionResult
+            result={prediction}
+            matchStatus={match.status}
+            scoreA={match.score_a}
+            scoreB={match.score_b}
+          />
         )}
       </Modal>
     </>

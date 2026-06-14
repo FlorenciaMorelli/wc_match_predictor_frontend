@@ -3,13 +3,17 @@
 import { useState } from "react";
 import type { MatchStatus, PredictResponse, ScoreProbability } from "@/types";
 import FlagImage from "./flag-image";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, teamName } from "@/lib/i18n";
 
 interface Props {
   result: PredictResponse;
   // Estado del partido (cuando viene del fixture). Define el mensaje al no haber
   // formación: pre-partido vs en vivo vs finalizado.
   matchStatus?: MatchStatus;
+  // Marcador real (cuando viene del fixture). Habilita la comparación
+  // predicción vs. resultado en partidos en vivo / finalizados.
+  scoreA?: string;
+  scoreB?: string;
 }
 
 const TEAM_A = "var(--result-a)";
@@ -62,14 +66,36 @@ function Scorelines({
   teamA,
   teamB,
   dense = false,
+  actualA,
+  actualB,
+  compare = false,
 }: {
   scorelines: ScoreProbability[];
   teamA: string;
   teamB: string;
   dense?: boolean;
+  // Marcador real: cuando `compare`, resalta la celda que coincide y agrega una
+  // nota de precisión debajo de la grilla (ranking del marcador o "fuera del top").
+  actualA?: number;
+  actualB?: number;
+  compare?: boolean;
 }) {
   const { t } = useLanguage();
   if (scorelines.length === 0) return null;
+
+  const top8 = scorelines.slice(0, 8);
+  const exactIdx =
+    compare && actualA != null && actualB != null
+      ? top8.findIndex((s) => s.score_a === actualA && s.score_b === actualB)
+      : -1;
+  const precisionNote = compare
+    ? exactIdx === 0
+      ? t.result.compare.scoreTop
+      : exactIdx > 0
+      ? t.result.compare.scoreRanked(exactIdx + 1)
+      : t.result.compare.scoreOutside
+    : null;
+
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -79,16 +105,28 @@ function Scorelines({
         <WinnerLegend teamA={teamA} teamB={teamB} />
       </div>
       <div className="grid grid-cols-4 gap-2">
-        {scorelines.slice(0, 8).map((s, i) => {
+        {top8.map((s, i) => {
           const color = scoreWinnerColor(s.score_a, s.score_b);
+          const isActual = i === exactIdx;
           return (
             <div
               key={i}
-              className={`flex flex-col items-center rounded-lg border border-line ${
+              className={`relative flex flex-col items-center rounded-lg border border-line ${
                 dense ? "px-1 py-2" : "px-2 py-3"
-              }`}
-              style={{ borderBottom: `2px solid ${color}` }}
+              } ${isActual ? "opacity-100" : compare ? "opacity-60" : ""}`}
+              style={{
+                borderBottom: `2px solid ${color}`,
+                ...(isActual ? { boxShadow: `0 0 0 1.5px ${color}` } : {}),
+              }}
             >
+              {isActual && (
+                <span
+                  className="absolute -top-2 rounded-full px-1.5 py-0.5 text-[0.5625rem] font-semibold leading-none"
+                  style={{ backgroundColor: color, color: "var(--canvas)" }}
+                >
+                  {t.result.compare.actual}
+                </span>
+              )}
               <span
                 className={`font-bold ${dense ? "text-sm" : "text-base"}`}
                 style={{ color }}
@@ -102,6 +140,9 @@ function Scorelines({
           );
         })}
       </div>
+      {precisionNote && (
+        <p className="mt-3 text-center text-xs text-ink-muted">{precisionNote}</p>
+      )}
     </div>
   );
 }
@@ -225,6 +266,8 @@ function LineupPitch({ players, color }: { players: string[]; color: string }) {
 // Bloque de un equipo: bandera + nombre + badge de estado. Si el XI está
 // confirmado, un toggle revela el esquema de cancha (colapsado por defecto para
 // no meter ruido). Si no, una nota de cuándo se publican las alineaciones.
+// Con el partido ya empezado, el badge "Formación confirmada" se omite (es obvio):
+// queda solo el nombre + "Ver formación".
 function TeamLineup({
   flag,
   name,
@@ -232,6 +275,7 @@ function TeamLineup({
   players,
   color,
   pendingNote,
+  started,
 }: {
   flag: string;
   name: string;
@@ -239,6 +283,7 @@ function TeamLineup({
   players: string[] | null;
   color: string;
   pendingNote: string;
+  started: boolean;
 }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -251,18 +296,20 @@ function TeamLineup({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="text-sm font-medium text-ink">{name}</span>
-            <span
-              className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.6875rem] font-medium ${
-                confirmed ? "bg-brand-soft text-brand" : "bg-canvas text-ink-muted"
-              }`}
-            >
+            {!(confirmed && started) && (
               <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  confirmed ? "bg-brand" : "bg-ink-subtle"
+                className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.6875rem] font-medium ${
+                  confirmed ? "bg-brand-soft text-brand" : "bg-canvas text-ink-muted"
                 }`}
-              />
-              {confirmed ? t.result.lineupConfirmed : t.result.lineupPending}
-            </span>
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    confirmed ? "bg-brand" : "bg-ink-subtle"
+                  }`}
+                />
+                {confirmed ? t.result.lineupConfirmed : t.result.lineupPending}
+              </span>
+            )}
           </div>
 
           {hasLineup ? (
@@ -303,11 +350,13 @@ function TeamLineup({
   );
 }
 
-export default function PredictionResult({ result, matchStatus }: Props) {
-  const { t } = useLanguage();
+export default function PredictionResult({ result, matchStatus, scoreA, scoreB }: Props) {
+  const { t, locale } = useLanguage();
   const {
-    team_a_es,
-    team_b_es,
+    team_a,
+    team_b,
+    team_a_es: teamAEs,
+    team_b_es: teamBEs,
     flag_a,
     flag_b,
     p_a,
@@ -330,6 +379,11 @@ export default function PredictionResult({ result, matchStatus }: Props) {
     p_advance_b,
   } = result;
 
+  // Nombre a mostrar según idioma. Se nombran igual que los campos del response
+  // para no tocar cada uso; el valor ya respeta el locale (en = canónico, es = _es).
+  const team_a_es = teamName(team_a, teamAEs, locale);
+  const team_b_es = teamName(team_b, teamBEs, locale);
+
   // Mensaje cuando un equipo no tiene XI: pre-partido informa el horario de
   // publicación; en vivo o finalizado, "no disponible" (no el de pre-partido).
   const lineupPendingNote =
@@ -340,6 +394,46 @@ export default function PredictionResult({ result, matchStatus }: Props) {
       : t.result.lineupPendingNote;
 
   const topScore = top_scorelines[0];
+
+  // Estado del partido + resultado real (gateado por estado, no por "hay marcador":
+  // los programados vienen 0–0). El marcador en el hero se muestra en vivo o
+  // finalizado; los enriquecimientos de comparación, SOLO finalizados ("lo
+  // definido es lo que ya se jugó"): en vivo nada está decidido todavía.
+  const isLive = matchStatus != null && LIVE_STATUSES.has(matchStatus);
+  const isFinished = matchStatus != null && FINISHED_STATUSES.has(matchStatus);
+  const hasStarted = isLive || isFinished;
+  const actualA = Number.parseInt(scoreA ?? "", 10);
+  const actualB = Number.parseInt(scoreB ?? "", 10);
+  const hasIntScore = Number.isInteger(actualA) && Number.isInteger(actualB);
+  const hasScore = (isLive || isFinished) && hasIntScore; // marcador en el hero
+  const compare = isFinished && hasIntScore; // comparación enriquecida
+
+  // Desenlace real (1X2) y su probabilidad según el modelo.
+  const outcome: "a" | "b" | "draw" =
+    actualA > actualB ? "a" : actualA < actualB ? "b" : "draw";
+  const actualOutcomeProb = outcome === "a" ? p_a : outcome === "b" ? p_b : p_draw;
+  // "Resultado inesperado": lo que pasó tenía baja probabilidad (< 25%). Pondera por
+  // el modelo, no por el marcador exacto: capta al favorito que no gana (p. ej. 84.8%
+  // de Suiza y terminó empate), no solo el marcador raro.
+  const isUpset = compare && actualOutcomeProb < 0.25;
+
+  // Goles reales vs. esperados (xG) POR equipo: un veredicto agregado engaña cuando un
+  // equipo marca de más y el otro de menos (Suiza por debajo, Catar por encima). Si
+  // divergen, lo decimos así; si no, comparamos el total con banda de tolerancia ±0.75.
+  const devA = actualA - xg_a;
+  const devB = actualB - xg_b;
+  const goalsDiverge =
+    Math.sign(devA) !== Math.sign(devB) &&
+    Math.max(Math.abs(devA), Math.abs(devB)) >= 0.75 &&
+    Math.min(Math.abs(devA), Math.abs(devB)) >= 0.3;
+  const totalDiff = devA + devB;
+  const goalNote = goalsDiverge
+    ? t.result.compare.goalsMixed(team_a_es, devA > 0, team_b_es, devB > 0)
+    : totalDiff > 0.75
+    ? t.result.compare.goalsMore
+    : totalDiff < -0.75
+    ? t.result.compare.goalsFewer
+    : t.result.compare.goalsAsExpected;
 
   // El "resultado más probable" debe respetar el marcador más probable:
   // si el top scoreline es un empate (p. ej. 0–0), el titular es Empate,
@@ -366,17 +460,53 @@ export default function PredictionResult({ result, matchStatus }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <div className="flex flex-1 flex-col items-center gap-2">
-          <FlagImage iso2={flag_a} name={team_a_es} size="lg" className="shadow-sm" />
-          <span className="text-center text-lg font-semibold text-ink">{team_a_es}</span>
-        </div>
-        <span className="text-xs font-semibold uppercase tracking-widest text-ink-subtle">
-          {t.result.vs}
-        </span>
-        <div className="flex flex-1 flex-col items-center gap-2">
-          <FlagImage iso2={flag_b} name={team_b_es} size="lg" className="shadow-sm" />
-          <span className="text-center text-lg font-semibold text-ink">{team_b_es}</span>
+      {/* Resultado con estado/veredicto encima del bloque de banderas y marcador:
+          el estado (Finalizado / En juego, con pulso en vivo) arriba a la derecha y,
+          más cerca del marcador, "Resultado inesperado" centrado (desenlace improbable). */}
+      <div className="space-y-2">
+        {hasScore && (
+          <div className="flex justify-end">
+            <span
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
+                isLive ? "bg-danger-soft text-danger" : "bg-canvas text-ink-muted"
+              }`}
+            >
+              {isLive && (
+                <span className="h-1.5 w-1.5 rounded-full bg-current motion-safe:animate-pulse" />
+              )}
+              {matchStatus ? t.fixture.status[matchStatus] : ""}
+            </span>
+          </div>
+        )}
+        {isUpset && (
+          <div className="flex justify-center">
+            <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/20 dark:text-amber-300/90">
+              {t.result.compare.surprise}
+            </span>
+          </div>
+        )}
+
+        <div className="flex items-center gap-4">
+          <div className="flex flex-1 flex-col items-center gap-2">
+            <FlagImage iso2={flag_a} name={team_a_es} size="lg" className="shadow-sm" />
+            <span className="text-center text-lg font-semibold text-ink">{team_a_es}</span>
+          </div>
+          {hasScore ? (
+            <span
+              className="shrink-0 text-3xl font-bold tabular-nums"
+              style={{ color: scoreWinnerColor(actualA, actualB) }}
+            >
+              {actualA} – {actualB}
+            </span>
+          ) : (
+            <span className="text-xs font-semibold uppercase tracking-widest text-ink-subtle">
+              {t.result.vs}
+            </span>
+          )}
+          <div className="flex flex-1 flex-col items-center gap-2">
+            <FlagImage iso2={flag_b} name={team_b_es} size="lg" className="shadow-sm" />
+            <span className="text-center text-lg font-semibold text-ink">{team_b_es}</span>
+          </div>
         </div>
       </div>
 
@@ -390,6 +520,8 @@ export default function PredictionResult({ result, matchStatus }: Props) {
         </span>
       </div>
 
+      {/* Probabilidades 1X2. En finalizados se resalta el desenlace real (outline +
+          "real") y se atenúan los otros; en el resto, las tres planas. */}
       <div>
         <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-ink-subtle">
           {t.result.probabilitiesAt90}
@@ -397,49 +529,84 @@ export default function PredictionResult({ result, matchStatus }: Props) {
         <div className="space-y-4">
           {(
             [
-              { label: team_a_es, value: p_a, color: TEAM_A },
-              { label: t.result.draw, value: p_draw, color: DRAW },
-              { label: team_b_es, value: p_b, color: TEAM_B },
+              { key: "a", label: team_a_es, value: p_a, color: TEAM_A },
+              { key: "draw", label: t.result.draw, value: p_draw, color: DRAW },
+              { key: "b", label: team_b_es, value: p_b, color: TEAM_B },
             ] as const
-          ).map(({ label, value, color }) => (
-            <div key={label}>
-              <div className="mb-1.5 flex justify-between text-sm">
-                <span className="font-medium text-ink">{label}</span>
-                <span className="font-semibold" style={{ color }}>
-                  {formatPct(value)}
-                </span>
-              </div>
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-line">
+          ).map(({ key, label, value, color }) => {
+            const occurred = compare && key === outcome;
+            return (
+              <div key={key} className={compare && !occurred ? "opacity-60" : ""}>
+                <div className="mb-1.5 flex items-center justify-between text-sm">
+                  <span
+                    className="font-medium text-ink"
+                    style={occurred ? { color } : undefined}
+                  >
+                    {label}
+                  </span>
+                  <span className="font-semibold" style={{ color }}>
+                    {formatPct(value)}
+                  </span>
+                </div>
                 <div
-                  className="h-2.5 rounded-full"
-                  style={{
-                    width: `${Math.round(value * 100)}%`,
-                    backgroundColor: color,
-                  }}
-                />
+                  className="h-2.5 w-full overflow-hidden rounded-full bg-line"
+                  style={occurred ? { boxShadow: `0 0 0 1.5px ${color}` } : undefined}
+                >
+                  <div
+                    className="h-2.5 rounded-full"
+                    style={{
+                      width: `${Math.round(value * 100)}%`,
+                      backgroundColor: color,
+                    }}
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      <div className="flex items-center justify-between rounded-xl bg-canvas px-8 py-5">
-        <div className="text-center">
-          <p className="mb-1 text-xs uppercase tracking-widest text-ink-subtle">
-            xG {team_a_es}
-          </p>
-          <p className="font-mono text-3xl font-bold text-ink">{xg_a.toFixed(1)}</p>
+      <div>
+        <div className="flex items-center justify-between rounded-xl bg-canvas px-8 py-5">
+          <div className="text-center">
+            <p className="mb-1 text-xs uppercase tracking-widest text-ink-subtle">
+              xG {team_a_es}
+            </p>
+            <p className="font-mono text-3xl font-bold text-ink">{xg_a.toFixed(1)}</p>
+            {compare && (
+              <p className="mt-1 text-xs text-ink-muted">
+                {t.result.compare.goalsLabel}:{" "}
+                <span className="font-semibold text-ink">{actualA}</span>
+              </p>
+            )}
+          </div>
+          <span className="text-2xl font-light text-line">—</span>
+          <div className="text-center">
+            <p className="mb-1 text-xs uppercase tracking-widest text-ink-subtle">
+              xG {team_b_es}
+            </p>
+            <p className="font-mono text-3xl font-bold text-ink">{xg_b.toFixed(1)}</p>
+            {compare && (
+              <p className="mt-1 text-xs text-ink-muted">
+                {t.result.compare.goalsLabel}:{" "}
+                <span className="font-semibold text-ink">{actualB}</span>
+              </p>
+            )}
+          </div>
         </div>
-        <span className="text-2xl font-light text-line">—</span>
-        <div className="text-center">
-          <p className="mb-1 text-xs uppercase tracking-widest text-ink-subtle">
-            xG {team_b_es}
-          </p>
-          <p className="font-mono text-3xl font-bold text-ink">{xg_b.toFixed(1)}</p>
-        </div>
+        {compare && (
+          <p className="mt-2 text-center text-xs text-ink-muted">{goalNote}</p>
+        )}
       </div>
 
-      <Scorelines scorelines={top_scorelines} teamA={team_a_es} teamB={team_b_es} />
+      <Scorelines
+        scorelines={top_scorelines}
+        teamA={team_a_es}
+        teamB={team_b_es}
+        actualA={actualA}
+        actualB={actualB}
+        compare={compare}
+      />
 
       {is_knockout && p_advance_a != null && p_advance_b != null && (
         <div className="space-y-3">
@@ -503,6 +670,7 @@ export default function PredictionResult({ result, matchStatus }: Props) {
             players={lineup_a}
             color={TEAM_A}
             pendingNote={lineupPendingNote}
+            started={hasStarted}
           />
           <TeamLineup
             flag={flag_b}
@@ -511,42 +679,47 @@ export default function PredictionResult({ result, matchStatus }: Props) {
             players={lineup_b}
             color={TEAM_B}
             pendingNote={lineupPendingNote}
+            started={hasStarted}
           />
         </div>
       </div>
 
-      <div className="rounded-xl bg-gold-soft px-6 py-5">
-        <p className="text-xs font-semibold uppercase tracking-widest text-gold">
-          {t.result.mostLikelyResult}
-        </p>
-        <div className="mt-2 flex items-center gap-4">
-          <div className="flex min-w-0 items-center gap-3">
-            {winnerFlag && (
-              <FlagImage iso2={winnerFlag} name={winnerName} size="md" className="shadow-sm" />
-            )}
-            <div className="min-w-0">
-              <p className="truncate text-2xl font-bold text-gold">{winnerHeadline}</p>
-              <p className="mt-0.5 text-sm text-ink-muted">
-                {formatPct(winnerProb)} · {t.result.confidencePhrase(confidence)}
-              </p>
+      {/* Tarjeta "Resultado más probable": el cierre de la predicción. Se quita en
+          finalizados (el resultado real manda); se mantiene en vivo y en el predictor. */}
+      {!isFinished && (
+        <div className="rounded-xl bg-gold-soft px-6 py-5">
+          <p className="text-xs font-semibold uppercase tracking-widest text-gold">
+            {t.result.mostLikelyResult}
+          </p>
+          <div className="mt-2 flex items-center gap-4">
+            <div className="flex min-w-0 items-center gap-3">
+              {winnerFlag && (
+                <FlagImage iso2={winnerFlag} name={winnerName} size="md" className="shadow-sm" />
+              )}
+              <div className="min-w-0">
+                <p className="truncate text-2xl font-bold text-gold">{winnerHeadline}</p>
+                <p className="mt-0.5 text-sm text-ink-muted">
+                  {formatPct(winnerProb)} · {t.result.confidencePhrase(confidence)}
+                </p>
+              </div>
             </div>
-          </div>
 
-          {topScore && (
-            <div className="ml-auto shrink-0 text-right">
-              <p className="text-xs uppercase tracking-widest text-gold">
-                {t.result.score}
-              </p>
-              <p className="text-xl font-bold text-ink">
-                {topScore.score_a}–{topScore.score_b}
-              </p>
-              <p className="text-xs text-ink-muted">
-                {formatPct(topScore.probability)}
-              </p>
-            </div>
-          )}
+            {topScore && (
+              <div className="ml-auto shrink-0 text-right">
+                <p className="text-xs uppercase tracking-widest text-gold">
+                  {t.result.score}
+                </p>
+                <p className="text-xl font-bold text-ink">
+                  {topScore.score_a}–{topScore.score_b}
+                </p>
+                <p className="text-xs text-ink-muted">
+                  {formatPct(topScore.probability)}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

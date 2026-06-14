@@ -8,10 +8,10 @@ import ModelPicker, { type Model } from "./model-picker";
 import PredictionResult from "./prediction-result";
 import PredictLoader from "./predict-loader";
 import { fetchTeams, predictMatch } from "@/lib/api";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, teamName } from "@/lib/i18n";
 
 export default function PredictorSection() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamsError, setTeamsError] = useState(false);
   const [teamA, setTeamA] = useState<Team | null>(null);
@@ -203,9 +203,9 @@ export default function PredictorSection() {
             <div className="rounded-2xl border border-line bg-surface p-8">
               <PredictLoader
                 flagA={teamA?.flag}
-                nameA={teamA?.name_es}
+                nameA={teamA ? teamName(teamA.canonical, teamA.name_es, locale) : undefined}
                 flagB={teamB?.flag}
-                nameB={teamB?.name_es}
+                nameB={teamB ? teamName(teamB.canonical, teamB.name_es, locale) : undefined}
               />
             </div>
           </div>

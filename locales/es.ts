@@ -154,5 +154,20 @@ export const es: Translations = {
     confidencePhrase: (level) => `confianza ${level.toLowerCase()}`,
     score: "Marcador",
     vs: "vs",
+    compare: {
+      actual: "real",
+      surprise: "Resultado inesperado",
+      goalsLabel: "Goles",
+      goalsMore: "Más goles de los esperados",
+      goalsFewer: "Menos goles de los esperados",
+      goalsAsExpected: "Goles dentro de lo previsto",
+      goalsMixed: (teamA, teamAMore, teamB, teamBMore) =>
+        `${teamA} marcó por ${teamAMore ? "encima" : "debajo"} de lo esperado y ${teamB} por ${
+          teamBMore ? "encima" : "debajo"
+        }`,
+      scoreTop: "El resultado fue el marcador más probable",
+      scoreRanked: (rank) => `El resultado fue el ${rank}º marcador más probable`,
+      scoreOutside: "El resultado no estaba entre los 8 más probables",
+    },
   },
 };
