@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
 import type { Team } from "@/types";
 import FlagImage from "./flag-image";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, teamName } from "@/lib/i18n";
 
 interface Props {
   teams: Team[];
@@ -21,17 +21,22 @@ export default function TeamPicker({
   placeholder,
   disabled,
 }: Props) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
   const resolvedPlaceholder = placeholder ?? t.teamPicker.placeholder;
 
+  // Busca en ambos idiomas: el usuario puede tipear "Turkey" o "Turquía".
   const filtered = query.trim()
-    ? teams.filter((team) =>
-        team.name_es.toLowerCase().includes(query.toLowerCase())
-      )
+    ? teams.filter((team) => {
+        const q = query.toLowerCase();
+        return (
+          team.name_es.toLowerCase().includes(q) ||
+          team.canonical.toLowerCase().includes(q)
+        );
+      })
     : teams;
 
   useEffect(() => {
@@ -52,8 +57,14 @@ export default function TeamPicker({
       >
         {value ? (
           <>
-            <FlagImage iso2={value.flag} name={value.name_es} size="xs" />
-            <span className="font-medium text-ink">{value.name_es}</span>
+            <FlagImage
+              iso2={value.flag}
+              name={teamName(value.canonical, value.name_es, locale)}
+              size="xs"
+            />
+            <span className="font-medium text-ink">
+              {teamName(value.canonical, value.name_es, locale)}
+            </span>
           </>
         ) : (
           <span className="text-ink-subtle">{resolvedPlaceholder}</span>
@@ -109,8 +120,12 @@ export default function TeamPicker({
                       value?.id === team.id ? "bg-brand-soft font-medium" : ""
                     }`}
                   >
-                    <FlagImage iso2={team.flag} name={team.name_es} size="xs" />
-                    {team.name_es}
+                    <FlagImage
+                      iso2={team.flag}
+                      name={teamName(team.canonical, team.name_es, locale)}
+                      size="xs"
+                    />
+                    {teamName(team.canonical, team.name_es, locale)}
                   </button>
                 </li>
               ))

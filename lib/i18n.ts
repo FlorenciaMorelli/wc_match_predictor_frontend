@@ -23,3 +23,10 @@ export const LanguageContext = createContext<LanguageContextValue>({
 export function useLanguage(): LanguageContextValue {
   return useContext(LanguageContext);
 }
+
+// Nombre de equipo a mostrar según idioma: inglés usa el canónico (FIFA, p. ej.
+// "Turkey"), español la variante traducida (p. ej. "Turquía"). Centraliza la
+// elección para no esparcir checks de `locale` por los componentes.
+export function teamName(en: string, es: string, locale: Locale): string {
+  return locale === "en" ? en : es;
+}

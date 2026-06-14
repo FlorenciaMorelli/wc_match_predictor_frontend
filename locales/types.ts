@@ -97,5 +97,22 @@ export type Translations = {
     confidencePhrase: (level: string) => string;
     score: string;
     vs: string;
+    compare: {
+      actual: string;
+      surprise: string;
+      goalsLabel: string;
+      goalsMore: string;
+      goalsFewer: string;
+      goalsAsExpected: string;
+      goalsMixed: (
+        teamA: string,
+        teamAMore: boolean,
+        teamB: string,
+        teamBMore: boolean
+      ) => string;
+      scoreTop: string;
+      scoreRanked: (rank: number) => string;
+      scoreOutside: string;
+    };
   };
 };
