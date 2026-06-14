@@ -20,6 +20,65 @@ const STATUS_STYLE: Record<string, string> = {
   programado: "text-ink-muted bg-canvas",
 };
 
+// Ventana del fixture: 30 días cubre toda la fase de grupos desde el arranque.
+const FIXTURE_DAYS_AHEAD = 30;
+
+// Rondas de eliminatoria en orden. "third-place" sólo se muestra si tiene
+// partidos (no entra en la grilla de placeholders por pedido del producto).
+const KNOCKOUT_PHASES = [
+  "round-of-32",
+  "round-of-16",
+  "quarter-finals",
+  "semi-finals",
+  "third-place",
+  "final",
+] as const;
+
+const normalizeRound = (round: string) => (round ?? "").toLowerCase();
+
+const kickoffMs = (m: FixtureMatch) =>
+  matchKickoff(m.date, m.time_utc)?.getTime() ?? Number.POSITIVE_INFINITY;
+
+// Una pestaña de la navegación horizontal: una fecha de grupos o una ronda.
+type Segment = {
+  id: string;
+  tabLabel: string;
+  heading: string;
+  matches: FixtureMatch[];
+};
+
+function todayLocalYmd(): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
+function lastLocalDate(matches: FixtureMatch[]): string | null {
+  let max: string | null = null;
+  for (const m of matches) {
+    const d = localDateString(m.date, m.time_utc);
+    if (max === null || d > max) max = d;
+  }
+  return max;
+}
+
+// Pestaña a abrir por defecto: la primera que aún no terminó (en curso o por
+// venir respecto de hoy). Si ya pasaron todas las que tienen fecha, la siguiente
+// ronda (aún sin definir). Las pasadas siguen accesibles como pestañas.
+function defaultSegmentIndex(segments: Segment[]): number {
+  const today = todayLocalYmd();
+  const ongoing = segments.findIndex((s) => {
+    const last = lastLocalDate(s.matches);
+    return last !== null && today <= last;
+  });
+  if (ongoing >= 0) return ongoing;
+  let lastDated = -1;
+  segments.forEach((s, i) => {
+    if (s.matches.length > 0) lastDated = i;
+  });
+  return lastDated >= 0 ? Math.min(lastDated + 1, segments.length - 1) : 0;
+}
+
 function formatDay(dateStr: string, dateLocale: string): string {
   const [y, m, d] = dateStr.split("-").map(Number);
   return new Date(y, m - 1, d).toLocaleDateString(dateLocale, {
@@ -27,6 +86,39 @@ function formatDay(dateStr: string, dateLocale: string): string {
     day: "numeric",
     month: "long",
   });
+}
+
+function relativeDayKey(dateStr: string): "today" | "tomorrow" | null {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const tmrw = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const tomorrow = `${tmrw.getFullYear()}-${pad(tmrw.getMonth() + 1)}-${pad(tmrw.getDate())}`;
+  if (dateStr === today) return "today";
+  if (dateStr === tomorrow) return "tomorrow";
+  return null;
+}
+
+// Deriva la fecha (matchday 1/2/3) de cada partido de grupos sin depender de un
+// campo del backend: cada equipo juega una vez por fecha, así que el N-ésimo
+// partido cronológico de un equipo es la Fecha N. Ambos equipos coinciden.
+function groupMatchdayMap(groupMatches: FixtureMatch[]): Map<string, number> {
+  const byTeam = new Map<number, FixtureMatch[]>();
+  for (const m of groupMatches) {
+    for (const id of [m.team_a_id, m.team_b_id]) {
+      const list = byTeam.get(id);
+      if (list) list.push(m);
+      else byTeam.set(id, [m]);
+    }
+  }
+  const matchday = new Map<string, number>();
+  for (const list of byTeam.values()) {
+    list.sort((a, b) => kickoffMs(a) - kickoffMs(b));
+    list.forEach((m, i) => {
+      matchday.set(m.id, Math.max(matchday.get(m.id) ?? 0, i + 1));
+    });
+  }
+  return matchday;
 }
 
 function MatchCard({ match }: { match: FixtureMatch }) {
@@ -191,12 +283,94 @@ function MatchCard({ match }: { match: FixtureMatch }) {
   );
 }
 
+// Grilla de partidos agrupada por día local, con encabezado de día y badges
+// "Hoy/Mañana". Reutilizable por cada fase y por cada fecha de grupos.
+function MatchDays({ matches }: { matches: FixtureMatch[] }) {
+  const { t } = useLanguage();
+
+  const grouped = matches.reduce<Record<string, FixtureMatch[]>>((acc, m) => {
+    const key = localDateString(m.date, m.time_utc);
+    (acc[key] ??= []).push(m);
+    return acc;
+  }, {});
+  for (const date of Object.keys(grouped)) {
+    grouped[date].sort((a, b) => kickoffMs(a) - kickoffMs(b));
+  }
+  const sortedDates = Object.keys(grouped).sort();
+
+  return (
+    <div className="space-y-8">
+      {sortedDates.map((date) => {
+        const rel = relativeDayKey(date);
+        return (
+          <div key={date}>
+            <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold capitalize text-ink-muted">
+              {rel && (
+                <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-brand">
+                  {t.fixture[rel]}
+                </span>
+              )}
+              {formatDay(date, t.meta.dateLocale)}
+            </h4>
+            <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {grouped[date].map((m) => (
+                <MatchCard key={m.id} match={m} />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Placeholder armonioso para rondas/fechas todavía sin partidos definidos.
+function PhasePlaceholder() {
+  const { t } = useLanguage();
+  return (
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-canvas/40 px-6 py-14 text-center">
+      <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-brand-soft text-brand">
+        <svg
+          className="h-5 w-5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="3" y="4.5" width="18" height="16" rx="2.5" />
+          <path d="M3 9h18M8 2.5v4M16 2.5v4" />
+        </svg>
+      </span>
+      <p className="text-sm font-semibold text-ink-muted">{t.fixture.pendingTitle}</p>
+      <p className="mt-1 max-w-xs text-xs text-ink-subtle">
+        {t.fixture.pendingDescription}
+      </p>
+    </div>
+  );
+}
+
+// Encabezado de fase con título y línea divisoria.
+function PhaseHeader({ title }: { title: string }) {
+  return (
+    <div className="flex items-center gap-4">
+      <h3 className="font-display text-xl font-bold tracking-tight text-ink md:text-2xl">
+        {title}
+      </h3>
+      <span className="h-px flex-1 bg-line" />
+    </div>
+  );
+}
+
 export default function FixtureSection() {
   const { t } = useLanguage();
   const [matches, setMatches] = useState<FixtureMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [daysAhead, setDaysAhead] = useState(7);
+  // null = todavía no hubo interacción; se usa la pestaña por defecto (hoy).
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -204,7 +378,7 @@ export default function FixtureSection() {
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchFixture(daysAhead);
+        const data = await fetchFixture(FIXTURE_DAYS_AHEAD);
         if (!cancelled) setMatches(data);
       } catch (e) {
         if (!cancelled)
@@ -217,33 +391,39 @@ export default function FixtureSection() {
     return () => {
       cancelled = true;
     };
-  }, [daysAhead, t.fixture.errorLoad]);
+  }, [t.fixture.errorLoad]);
 
-  const grouped = matches.reduce<Record<string, FixtureMatch[]>>((acc, m) => {
-    const key = localDateString(m.date, m.time_utc);
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(m);
-    return acc;
-  }, {});
-  // Order matches within each local day by their actual kickoff instant.
-  // Matches without a usable time sort last (keeping their relative order).
-  const kickoffMs = (m: FixtureMatch) =>
-    matchKickoff(m.date, m.time_utc)?.getTime() ?? Number.POSITIVE_INFINITY;
-  for (const date of Object.keys(grouped)) {
-    grouped[date].sort((a, b) => kickoffMs(a) - kickoffMs(b));
-  }
-  const sortedDates = Object.keys(grouped).sort();
+  // Segmentos en orden: 3 fechas de grupos + eliminatorias. Los partidos ya
+  // jugados quedan dentro de su fecha/ronda (no se descartan).
+  const groupMatches = matches.filter(
+    (m) => normalizeRound(m.round) === "group-stage"
+  );
+  const matchdayMap = groupMatchdayMap(groupMatches);
 
-  function relativeLabel(dateStr: string): string | null {
-    const now = new Date();
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const todayLocal = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-    const tmrw = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    const tomorrowLocal = `${tmrw.getFullYear()}-${pad(tmrw.getMonth() + 1)}-${pad(tmrw.getDate())}`;
-    if (dateStr === todayLocal) return t.fixture.today;
-    if (dateStr === tomorrowLocal) return t.fixture.tomorrow;
-    return null;
+  const segments: Segment[] = [];
+  for (const n of [1, 2, 3]) {
+    segments.push({
+      id: `md-${n}`,
+      tabLabel: t.fixture.matchday(n),
+      heading: `${t.fixture.rounds["group-stage"]} · ${t.fixture.matchday(n)}`,
+      matches: groupMatches.filter((m) => matchdayMap.get(m.id) === n),
+    });
   }
+  for (const round of KNOCKOUT_PHASES) {
+    const ms = matches.filter((m) => normalizeRound(m.round) === round);
+    // El tercer puesto sólo aparece cuando ya tiene partido.
+    if (round === "third-place" && ms.length === 0) continue;
+    segments.push({
+      id: round,
+      tabLabel: t.fixture.rounds[round],
+      heading: t.fixture.rounds[round],
+      matches: ms,
+    });
+  }
+
+  const defaultId = segments[defaultSegmentIndex(segments)]?.id ?? null;
+  const activeSeg =
+    segments.find((s) => s.id === (activeId ?? defaultId)) ?? segments[0];
 
   return (
     <section id="fixture" className="mx-auto max-w-7xl px-6 py-20 md:px-12">
@@ -269,41 +449,49 @@ export default function FixtureSection() {
         </p>
       )}
 
-      {!loading && !error && matches.length === 0 && (
-        <p className="mt-8 text-sm text-ink-subtle">{t.fixture.emptyState}</p>
-      )}
-
-      {!loading && sortedDates.length > 0 && (
-        <div className="mt-10 space-y-10">
-          {sortedDates.map((date) => (
-            <div key={date}>
-              <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold capitalize text-ink-muted">
-                {relativeLabel(date) && (
-                  <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-brand">
-                    {relativeLabel(date)}
-                  </span>
-                )}
-                {formatDay(date, t.meta.dateLocale)}
-              </h3>
-              <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {grouped[date].map((m) => (
-                  <MatchCard key={m.id} match={m} />
-                ))}
-              </div>
+      {!loading && !error && activeSeg && (
+        <div className="mt-10">
+          {/* Navegación horizontal por fecha/ronda */}
+          <div className="-mx-6 overflow-x-auto px-6 md:mx-0 md:px-0">
+            <div
+              role="tablist"
+              aria-label={t.fixture.sectionLabel}
+              className="flex min-w-max gap-1 border-b border-line"
+            >
+              {segments.map((s) => {
+                const isActive = activeSeg.id === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => setActiveId(s.id)}
+                    className={`relative whitespace-nowrap px-4 py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
+                      isActive ? "text-brand" : "text-ink-muted hover:text-ink"
+                    }`}
+                  >
+                    {s.tabLabel}
+                    {isActive && (
+                      <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-brand" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
-          ))}
-        </div>
-      )}
+          </div>
 
-      {!loading && matches.length > 0 && daysAhead < 30 && (
-        <div className="mt-10 flex justify-center">
-          <button
-            type="button"
-            onClick={() => setDaysAhead((v) => Math.min(v + 7, 30))}
-            className="rounded-xl border border-line bg-surface px-7 py-3 text-sm font-semibold text-ink-muted transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
-          >
-            {t.fixture.loadMore}
-          </button>
+          {/* Contenido de la pestaña activa */}
+          <div role="tabpanel" className="mt-8">
+            <PhaseHeader title={activeSeg.heading} />
+            <div className="mt-8">
+              {activeSeg.matches.length > 0 ? (
+                <MatchDays matches={activeSeg.matches} />
+              ) : (
+                <PhasePlaceholder />
+              )}
+            </div>
+          </div>
         </div>
       )}
     </section>
