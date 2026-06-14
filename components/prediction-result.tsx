@@ -1,11 +1,15 @@
 "use client";
 
-import type { PredictResponse, ScoreProbability } from "@/types";
+import { useState } from "react";
+import type { MatchStatus, PredictResponse, ScoreProbability } from "@/types";
 import FlagImage from "./flag-image";
 import { useLanguage } from "@/lib/i18n";
 
 interface Props {
   result: PredictResponse;
+  // Estado del partido (cuando viene del fixture). Define el mensaje al no haber
+  // formación: pre-partido vs en vivo vs finalizado.
+  matchStatus?: MatchStatus;
 }
 
 const TEAM_A = "var(--result-a)";
@@ -21,6 +25,18 @@ function scoreWinnerColor(a: number, b: number): string {
 function formatPct(value: number): string {
   return `${Number((value * 100).toFixed(2))}%`;
 }
+
+// Estados con el partido en curso / ya jugado. Definen qué mensaje mostrar
+// cuando no hay formación: en vivo o finalizado NO deben decir "se publican ~1h
+// antes" (ya arrancó). Se tipan como string para tolerar variantes del backend.
+const LIVE_STATUSES = new Set<string>([
+  "en juego",
+  "STATUS_FIRST_HALF",
+  "STATUS_SECOND_HALF",
+  "descanso",
+  "STATUS_HALFTIME",
+]);
+const FINISHED_STATUSES = new Set<string>(["finalizado", "STATUS_FULL_TIME"]);
 
 function WinnerLegend({ teamA, teamB }: { teamA: string; teamB: string }) {
   const { t } = useLanguage();
@@ -90,44 +106,204 @@ function Scorelines({
   );
 }
 
-function FormationRow({
-  flag,
-  name,
-  confirmed,
-  desc,
-}: {
-  flag: string;
-  name: string;
-  confirmed: boolean;
-  desc: string;
-}) {
-  const { t } = useLanguage();
+// Una ficha de jugador en la cancha: disco en el color del equipo (anillo blanco
+// + sombra y brillo sutil) y el nombre en un chip translúcido para que se lea
+// sobre el césped. Nombre tal cual de ESPN, a 2 líneas máx.
+function PitchPlayer({ name, color }: { name: string; color: string }) {
   return (
-    <div className="flex items-start gap-2.5">
-      <FlagImage iso2={flag} name={name} size="xs" />
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-sm font-medium text-ink">{name}</span>
-          <span
-            className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.6875rem] font-medium ${
-              confirmed ? "bg-brand-soft text-brand" : "bg-canvas text-ink-muted"
-            }`}
-          >
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                confirmed ? "bg-brand" : "bg-ink-subtle"
-              }`}
-            />
-            {confirmed ? t.result.lineupConfirmed : t.result.lineupPending}
-          </span>
-        </div>
-        {desc && <p className="mt-0.5 text-xs leading-5 text-ink-muted">{desc}</p>}
-      </div>
+    <div className="flex w-[4.25rem] flex-col items-center gap-1">
+      <span
+        className="relative h-6 w-6 rounded-full border-2 border-white shadow-[0_1px_3px_rgba(0,0,0,0.45)]"
+        style={{ backgroundColor: color }}
+      >
+        <span className="absolute inset-x-[3px] top-[3px] h-1.5 rounded-full bg-white/35" />
+      </span>
+      <span
+        title={name}
+        className="line-clamp-2 w-full rounded bg-black/40 px-1 py-0.5 text-center text-[0.625rem] font-semibold leading-tight text-white"
+      >
+        {name}
+      </span>
     </div>
   );
 }
 
-export default function PredictionResult({ result }: Props) {
+// Esquema de cancha con identidad WC2026: césped verde a rayas, marcas blancas
+// reglamentarias y acentos dorados (firma del Mundial + franja tricolor). El
+// backend manda los 11 en orden ESPN sin posición, así que asumimos un 4-3-3 y
+// lo avisamos abajo ("posiciones aproximadas"). Si no vienen 11, caemos a lista.
+function LineupPitch({ players, color }: { players: string[]; color: string }) {
+  const { t } = useLanguage();
+
+  if (players.length !== 11) {
+    return (
+      <ol className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 rounded-xl bg-canvas px-4 py-3 text-sm text-ink-muted">
+        {players.map((name) => (
+          <li key={name}>{name}</li>
+        ))}
+      </ol>
+    );
+  }
+
+  // De arriba (delanteros) hacia abajo (arquero).
+  const lines: { label: string; names: string[] }[] = [
+    { label: t.result.lineFwd, names: players.slice(8, 11) },
+    { label: t.result.lineMid, names: players.slice(5, 8) },
+    { label: t.result.lineDef, names: players.slice(1, 5) },
+    { label: t.result.lineGk, names: players.slice(0, 1) },
+  ];
+
+  const gold = "var(--gold)";
+
+  return (
+    <div className="mt-3">
+      <div className="overflow-hidden rounded-xl border border-line shadow-sm">
+        {/* Firma WC2026: franja tricolor (Canadá / México / EE.UU.) */}
+        <div className="wc-tricolor h-1" />
+
+        {/* Campo */}
+        <div
+          className="relative min-h-[21rem]"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(180deg, rgba(255,255,255,0.06) 0 1.25rem, rgba(255,255,255,0) 1.25rem 2.5rem), linear-gradient(170deg, #2f9e5e 0%, #1c7341 100%)",
+          }}
+        >
+          {/* Marcas reglamentarias (decorativas) */}
+          <span className="pointer-events-none absolute inset-3 rounded-sm border border-white/25" />
+          <span className="pointer-events-none absolute inset-x-3 top-1/2 h-px -translate-y-1/2 bg-white/25" />
+          <span className="pointer-events-none absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/25" />
+          {/* Áreas (penal + arco) arriba y abajo */}
+          <span className="pointer-events-none absolute left-1/2 top-3 h-14 w-44 -translate-x-1/2 border-x border-b border-white/25" />
+          <span className="pointer-events-none absolute left-1/2 top-3 h-7 w-24 -translate-x-1/2 border-x border-b border-white/25" />
+          <span className="pointer-events-none absolute bottom-3 left-1/2 h-14 w-44 -translate-x-1/2 border-x border-t border-white/25" />
+          <span className="pointer-events-none absolute bottom-3 left-1/2 h-7 w-24 -translate-x-1/2 border-x border-t border-white/25" />
+          {/* Arcos de córner */}
+          <span className="pointer-events-none absolute left-3 top-3 h-3 w-3 rounded-br-full border-b border-r border-white/25" />
+          <span className="pointer-events-none absolute right-3 top-3 h-3 w-3 rounded-bl-full border-b border-l border-white/25" />
+          <span className="pointer-events-none absolute bottom-3 left-3 h-3 w-3 rounded-tr-full border-r border-t border-white/25" />
+          <span className="pointer-events-none absolute bottom-3 right-3 h-3 w-3 rounded-tl-full border-l border-t border-white/25" />
+          {/* Acentos dorados WC2026: punto central + puntos de penal */}
+          <span
+            className="pointer-events-none absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{ backgroundColor: gold }}
+          />
+          <span
+            className="pointer-events-none absolute left-1/2 top-[2.5rem] h-1.5 w-1.5 -translate-x-1/2 rounded-full"
+            style={{ backgroundColor: gold }}
+          />
+          <span
+            className="pointer-events-none absolute bottom-[2.5rem] left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full"
+            style={{ backgroundColor: gold }}
+          />
+
+          {/* Jugadores (delanteros arriba → arquero abajo) */}
+          <div className="absolute inset-0 flex flex-col justify-between px-3 py-6">
+            {lines.map((line) => (
+              <div key={line.label} className="flex items-center">
+                <span className="w-7 shrink-0 text-right text-[0.625rem] font-semibold uppercase tracking-wide text-white/40">
+                  {line.label}
+                </span>
+                <div className="flex flex-1 justify-around gap-1">
+                  {line.names.map((name) => (
+                    <PitchPlayer key={name} name={name} color={color} />
+                  ))}
+                </div>
+                <span className="w-7 shrink-0" aria-hidden />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <p className="mt-2 text-center text-[0.6875rem] text-ink-subtle">
+        {t.result.lineupApprox}
+      </p>
+    </div>
+  );
+}
+
+// Bloque de un equipo: bandera + nombre + badge de estado. Si el XI está
+// confirmado, un toggle revela el esquema de cancha (colapsado por defecto para
+// no meter ruido). Si no, una nota de cuándo se publican las alineaciones.
+function TeamLineup({
+  flag,
+  name,
+  confirmed,
+  players,
+  color,
+  pendingNote,
+}: {
+  flag: string;
+  name: string;
+  confirmed: boolean;
+  players: string[] | null;
+  color: string;
+  pendingNote: string;
+}) {
+  const { t } = useLanguage();
+  const [open, setOpen] = useState(false);
+  const hasLineup = confirmed && players != null && players.length > 0;
+
+  return (
+    <div>
+      <div className="flex items-start gap-2.5">
+        <FlagImage iso2={flag} name={name} size="xs" />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="text-sm font-medium text-ink">{name}</span>
+            <span
+              className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.6875rem] font-medium ${
+                confirmed ? "bg-brand-soft text-brand" : "bg-canvas text-ink-muted"
+              }`}
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  confirmed ? "bg-brand" : "bg-ink-subtle"
+                }`}
+              />
+              {confirmed ? t.result.lineupConfirmed : t.result.lineupPending}
+            </span>
+          </div>
+
+          {hasLineup ? (
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-expanded={open}
+              className="mt-1.5 inline-flex items-center gap-1 rounded-sm text-xs font-semibold text-brand transition-colors hover:text-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+            >
+              {open ? t.result.lineupHide : t.result.lineupView}
+              <svg
+                className={`h-3.5 w-3.5 transition-transform ${
+                  open ? "rotate-180" : ""
+                }`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+          ) : (
+            <p className="mt-0.5 text-xs leading-5 text-ink-muted">
+              {pendingNote}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {hasLineup && open && players && (
+        <LineupPitch players={players} color={color} />
+      )}
+    </div>
+  );
+}
+
+export default function PredictionResult({ result, matchStatus }: Props) {
   const { t } = useLanguage();
   const {
     team_a_es,
@@ -144,15 +320,24 @@ export default function PredictionResult({ result }: Props) {
     venue_label,
     neutral,
     home_team_id,
-    squad_desc_a,
-    squad_desc_b,
     lineup_confirmed_a,
     lineup_confirmed_b,
+    lineup_a,
+    lineup_b,
     is_knockout,
     p_penalties,
     p_advance_a,
     p_advance_b,
   } = result;
+
+  // Mensaje cuando un equipo no tiene XI: pre-partido informa el horario de
+  // publicación; en vivo o finalizado, "no disponible" (no el de pre-partido).
+  const lineupPendingNote =
+    matchStatus && LIVE_STATUSES.has(matchStatus)
+      ? t.result.lineupUnavailableLive
+      : matchStatus && FINISHED_STATUSES.has(matchStatus)
+      ? t.result.lineupUnavailableFinished
+      : t.result.lineupPendingNote;
 
   const topScore = top_scorelines[0];
 
@@ -310,18 +495,22 @@ export default function PredictionResult({ result }: Props) {
         <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-ink-subtle">
           {t.result.squadFormation}
         </p>
-        <div className="space-y-3">
-          <FormationRow
+        <div className="space-y-4">
+          <TeamLineup
             flag={flag_a}
             name={team_a_es}
             confirmed={lineup_confirmed_a}
-            desc={squad_desc_a}
+            players={lineup_a}
+            color={TEAM_A}
+            pendingNote={lineupPendingNote}
           />
-          <FormationRow
+          <TeamLineup
             flag={flag_b}
             name={team_b_es}
             confirmed={lineup_confirmed_b}
-            desc={squad_desc_b}
+            players={lineup_b}
+            color={TEAM_B}
+            pendingNote={lineupPendingNote}
           />
         </div>
       </div>

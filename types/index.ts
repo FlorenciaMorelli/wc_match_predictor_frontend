@@ -78,6 +78,10 @@ export interface PredictResponse {
   squad_desc_b: string;
   lineup_confirmed_a: boolean;
   lineup_confirmed_b: boolean;
+  // XI inicial confirmado (nombres ESPN, en el orden publicado). null si no está
+  // disponible. Garantía del backend: confirmed === true ⟺ array de 11 nombres.
+  lineup_a: string[] | null;
+  lineup_b: string[] | null;
 
   // Narrativa en español lista para mostrar al usuario
   narrative: string;

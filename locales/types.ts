@@ -76,6 +76,16 @@ export type Translations = {
     mostLikelyScores: string;
     lineupConfirmed: string;
     lineupPending: string;
+    lineupView: string;
+    lineupHide: string;
+    lineupApprox: string;
+    lineupPendingNote: string;
+    lineupUnavailableLive: string;
+    lineupUnavailableFinished: string;
+    lineGk: string;
+    lineDef: string;
+    lineMid: string;
+    lineFwd: string;
     probabilitiesAt90: string;
     penaltiesProbability: string;
     analysis: string;
