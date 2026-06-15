@@ -121,6 +121,9 @@ export const es: Translations = {
         "Modelo base. Estima los goles de cada equipo de forma independiente.",
     },
   },
+  footer: {
+    madeBy: "Desarrollado por",
+  },
   modal: { close: "Cerrar" },
   theme: {
     toLight: "Cambiar a modo claro",
