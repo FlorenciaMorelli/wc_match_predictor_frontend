@@ -24,9 +24,16 @@ export function useLanguage(): LanguageContextValue {
   return useContext(LanguageContext);
 }
 
+// Nombres donde el canónico FIFA difiere del nombre en inglés más reconocido.
+// Permite mostrar el nombre preferido en la UI sin tocar los datos del backend.
+const EN_NAME_OVERRIDES: Record<string, string> = {
+  "Cabo Verde": "Cape Verde",
+};
+
 // Nombre de equipo a mostrar según idioma: inglés usa el canónico (FIFA, p. ej.
 // "Turkey"), español la variante traducida (p. ej. "Turquía"). Centraliza la
 // elección para no esparcir checks de `locale` por los componentes.
 export function teamName(en: string, es: string, locale: Locale): string {
-  return locale === "en" ? en : es;
+  if (locale === "en") return EN_NAME_OVERRIDES[en] ?? en;
+  return es;
 }
