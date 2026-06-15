@@ -4,6 +4,7 @@ import Link from "next/link";
 import ThemeToggle from "./theme-toggle";
 import LanguageToggle from "./language-toggle";
 import { useLanguage } from "@/lib/i18n";
+import Logo from "./logo";
 
 export default function Nav() {
   const { t } = useLanguage();
@@ -14,9 +15,11 @@ export default function Nav() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 md:px-12">
         <Link
           href="/"
-          className="font-display text-xl font-extrabold tracking-tight text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 rounded-sm"
+          className="flex items-center gap-2.5 font-display text-xl font-extrabold tracking-tight text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 rounded-sm"
+          aria-label={t.nav.title}
         >
-          {t.nav.title}
+          <Logo size={28} />
+          <span>{t.nav.title}</span>
         </Link>
         <nav className="flex items-center gap-4">
           <a
