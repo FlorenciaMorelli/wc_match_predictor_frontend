@@ -18,6 +18,12 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
+      // El health check del backend vive en /health (fuera de /api/*), así que
+      // necesita una entrada específica ANTES del rewrite genérico de /api/*.
+      {
+        source: "/api/health",
+        destination: `${API_BASE_URL}/health`,
+      },
       {
         source: "/api/:path*",
         destination: `${API_BASE_URL}/api/:path*`,
