@@ -9,7 +9,7 @@ import FlagImage from "./flag-image";
 import Modal from "./modal";
 import { useLanguage, teamName } from "@/lib/i18n";
 import { formatLocalTime, localTimeZoneName, localDateString, matchKickoff } from "@/lib/datetime";
-import { cityForVenue } from "@/lib/venues";
+import { cityForVenue, homeNationIso } from "@/lib/venues";
 
 const LIVE_STATUSES = new Set([
   "en juego", "STATUS_FIRST_HALF", "STATUS_SECOND_HALF", "descanso", "STATUS_HALFTIME",
@@ -157,6 +157,24 @@ function MatchCard({ match }: { match: FixtureMatch }) {
   const city = cityForVenue(match.venue, locale);
   const nameA = teamName(match.team_a, match.team_a_es, locale);
   const nameB = teamName(match.team_b, match.team_b_es, locale);
+
+  // Etiqueta local/neutral para la card: se deriva del país anfitrión del estadio
+  // (ISO2 del venue) matcheando contra flag_a / flag_b. No depende de PredictResponse.
+  const hostIso = homeNationIso(match.venue);
+  const homeTeamName =
+    !match.neutral && hostIso != null
+      ? match.flag_a === hostIso
+        ? nameA
+        : match.flag_b === hostIso
+        ? nameB
+        : null
+      : null;
+  const cardVenueLabel = match.neutral
+    ? t.result.venueNeutral
+    : homeTeamName != null
+    ? t.result.venueHome(homeTeamName)
+    : null;
+
   const hasScore =
     match.score_a !== "" &&
     match.score_b !== "" &&
@@ -236,9 +254,9 @@ function MatchCard({ match }: { match: FixtureMatch }) {
             </div>
           </div>
 
-          {(city || match.venue) && (
+          {(city || match.venue || cardVenueLabel) && (
             <p className="mt-3 text-center text-xs text-ink-subtle">
-              {[city, match.venue].filter(Boolean).join(" · ")}
+              {[city, match.venue, cardVenueLabel].filter(Boolean).join(" · ")}
             </p>
           )}
         </div>
@@ -274,6 +292,11 @@ function MatchCard({ match }: { match: FixtureMatch }) {
                 .filter(Boolean)
                 .join(" · ")}
             </p>
+            {(city || match.venue) && (
+              <p className="mt-0.5 truncate text-xs text-ink-subtle">
+                {[city, match.venue].filter(Boolean).join(" · ")}
+              </p>
+            )}
           </div>
         }
       >
