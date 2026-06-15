@@ -5,69 +5,62 @@ perder el razonamiento. Al cerrar uno, moverlo a "Hecho" o borrarlo (queda en el
 
 ---
 
-## Análisis de partido vía API externa gratuita
+## Roadmap multi-rol (junio 2026)
 
-**Origen:** rediseño "resultado real integrado en el modal" (rama `feat/prediccion-vs-real`). Quedó
-fuera de alcance de ese branch por tamaño y por requerir trabajo más allá del frontend.
+Plan de entregas progresivas: cada ítem es **una rama → PR → `staging`**; al cerrar una ola,
+`staging → main --ff-only` + tag SemVer. Orden por prioridad: quick-wins de frontend → infra de UX →
+integración externa.
 
-**Qué:** hoy la sección **"Análisis"** del modal de resultado muestra `narrative` (texto que arma el
-backend). La idea es reemplazarla —o complementarla, sobre todo en partidos **finalizados**— por un
-análisis/crónica traído de una **API gratuita** de datos de fútbol, para que el texto refleje lo que
-pasó en el partido real y no solo la predicción previa.
+| #  | Ítem                                          | Estado       | Rama                            |
+|----|-----------------------------------------------|--------------|---------------------------------|
+| —  | Narrativa: traducción es→en (MyMemory)        | ✅ Hecho      | (ver `app/api/translate/route.ts`) |
+| —  | Sede neutral / localía (i18n en el front)     | ✅ Hecho      | `fix/sede-neutral-i18n` (#15)   |
+| 1  | Logo SVG + título + favicon + OG              | En curso     | `feat/brand-logo`               |
+| 2  | Footer con datos de devs                      | Pendiente    | `feat/footer-credits`           |
+| 3  | Unificar sede card↔modal                      | Pendiente    | `feat/venue-unify`              |
+| 4  | Pulido formación + datos por jugador          | Pendiente    | `feat/lineup-polish`            |
+| 5  | UX de desconexión (tarjeta de error)          | Pendiente    | `feat/connection-error-ux`      |
+| 6  | Análisis de partido finalizado (TheSportsDB)  | Pendiente    | `feat/match-analysis-thesportsdb` |
 
-**Por qué no entró ahora:**
-- Requiere **investigar proveedores** y su free tier real (límites de requests, cobertura del
-  Mundial 2026, latencia, si exponen narrativa/eventos o solo datos crudos).
-- **Licencia de datos / términos de uso**: confirmar que el plan gratuito permite mostrar el
-  contenido en producto.
-- **CORS / proxy**: el navegador debe pegar same-origin; replicar el patrón del fixture
-  (`next.config` rewrite a `BACKEND_ORIGIN`, ver memoria *frontend-api-proxy-cors*). Posiblemente
-  haya que **proxyear por backend** para esconder la API key y cachear.
-- Probable **trabajo de backend** (no solo frontend): normalizar la respuesta al shape que consume
-  el front y cachear para no agotar el free tier.
+**Olas:** A = ítems 1-4 (frontend puro) → release. B = ítem 5 → release. C = ítem 6 → release.
 
-**Consideraciones de diseño/UX al retomar:**
-- En **finalizado**: crónica del partido real (goleadores, eventos). En **programado/en vivo**:
-  mantener la narrativa predictiva actual (o preview).
-- Estados de carga/error y *fallback* a `narrative` si la API externa falla (no romper el modal).
-- Tono y idioma: el producto es es-AR / en; la fuente probablemente venga en inglés → traducir o
-  elegir proveedor multilenguaje.
-
-**Candidatos a evaluar (sin compromiso, verificar términos y free tier vigentes):**
-- API-Football (api-sports.io) — free tier con límite diario; cobertura amplia.
-- football-data.org — free tier; cobertura de torneos principales.
-- TheSportsDB — gratuita; datos más livianos.
-
-**Done cuando:** la sección "Análisis" muestra contenido derivado del partido real en finalizados,
-con fallback robusto a `narrative`, sin filtrar API keys al cliente y sin romper si el proveedor
-falla o agota cuota.
+Las features 1-4 son frontend puro y se construyen en esta tanda (no se difieren). Las secciones de abajo
+guardan el contexto detallado de los ítems que requieren más diseño/decisión (5 y 6).
 
 ---
 
-## Narrativa del análisis: traducción automática (es→en)
+## Análisis de partido finalizado vía TheSportsDB
 
-**Origen:** rama `feat/prediccion-vs-real`. Con la app en **inglés**, el texto de la sección
-**"Análisis"** (`narrative` de `PredictResponse`) sigue en español porque lo **genera el backend ya
-formateado**.
+**Origen:** rediseño "resultado real integrado en el modal" (rama `feat/prediccion-vs-real`). Quedó fuera
+de alcance de ese branch por tamaño.
 
-> **Resuelto aparte:** la **etiqueta de sede** ("cancha neutral" / localía) se resolvió en el front
-> (rama `fix/sede-neutral-i18n`) sin depender del backend. Queda solo la narrativa.
+**Decisión (jun 2026):** usar **TheSportsDB** (gratis, **sin API key**) vía route handler de Next (espejo
+de `app/api/translate/route.ts`), para **no** sumar trabajo al backend de Juan (sobrecargado). **Rama:**
+`feat/match-analysis-thesportsdb`.
 
-**Decisión de implementación:** traducir la narrativa en caliente en el front usando la API gratuita
-**MyMemory** (sin API key requerida; 5.000 chars/día de límite, suficiente para el uso real del sitio).
-La narrativa es prosa estadística factual → la traducción automática es de buena calidad para este tipo
-de texto. **Branch planificado:** `feat/narrative-translate`.
+**Qué:** hoy la sección **"Análisis"** del modal muestra `narrative` (texto que arma el backend, de tono
+predictivo). En partidos **finalizados** se reemplaza/complementa por una **crónica real**
+(goleadores/eventos) traída de TheSportsDB, para que el texto refleje lo que pasó y no solo la predicción
+previa.
 
 **Arquitectura prevista:**
-- `app/api/translate/route.ts` (nuevo route de Next.js): recibe `{ text }`, llama a MyMemory
-  (`api.mymemory.translated.net`) server-side (sin exponer nada al cliente), cachea la traducción
-  en memoria por texto (la narrativa para la misma predicción es siempre igual).
-- `prediction-result.tsx`: cuando `locale === "en"`, dispara un `useEffect` que llama a
-  `/api/translate` con la narrativa. Muestra el original mientras carga (sin bloquear el modal) y
-  reemplaza con la traducción al llegar. Fallback silencioso al original si falla.
+- `app/api/match-analysis/route.ts` (NUEVO): recibe equipos + fecha (o score), llama a TheSportsDB
+  server-side (free key `3`/`123`, p. ej. `searchevents`/`eventsday`), **normaliza** la respuesta a un
+  shape chico `{ home, away, scorers/events }` y cachea en memoria. Matchea por **fecha + equipos** para
+  no traer el evento equivocado.
+- `prediction-result.tsx`: si `matchStatus` es finalizado, `useEffect` que llama a `/api/match-analysis`;
+  render de la crónica en la sección "Análisis", **con fallback robusto a `narrative`** si la API falla,
+  no matchea o no hay cobertura. No-finalizados: se mantiene la narrativa predictiva actual.
+- i18n: rótulos de crónica ("Goles", "Fuente: TheSportsDB") en es/en.
 
-**Done cuando:** con la app en inglés, la sección "Análisis" se muestra en inglés (traducción
-automática), con fallback silencioso al español si el servicio falla, sin API keys hardcodeadas.
+**Consideraciones de UX:** estados de carga/error sin bloquear el modal; tono y idioma del producto
+(es-AR / en) — la fuente probablemente venga en inglés, traducir o mostrar datos crudos localizados.
+
+**Riesgo:** cobertura real de WC2026 en TheSportsDB a verificar en implementación → el fallback a
+`narrative` es la red de seguridad (nunca rompe el modal).
+
+**Done cuando:** en finalizados, "Análisis" muestra contenido derivado del partido real con fallback
+robusto a `narrative`, sin API keys en el cliente y sin romper si el proveedor falla o no cubre el partido.
 
 ---
 
@@ -76,8 +69,7 @@ automática), con fallback silencioso al español si el servicio falla, sin API 
 **Origen:** se trabajó la robustez de cold-start en `fix/predict-cold-start` (PR3: pre-flight a
 `/health` + retry en 503 + timeout 240s). Eso mitiga la *carga* lenta reintentando en silencio, pero
 quedó pendiente el **diseño de qué ve el usuario** cuando la reconexión no alcanza o falla. Branch
-propio planificado: **`feat/connection-error-ux`**, a construir **después de que mergeen PR3 y PR4**
-(depende del `predictMatch` reestructurado de PR3; comparte archivos de locales con PR4 sin conflicto).
+propio: **`feat/connection-error-ux`**.
 
 **Qué:** hoy `lib/api.ts` mapea **toda** falla de red a un **string en español hardcodeado** y los tres
 sitios que consumen la API lo muestran como un **banner rojo plano, idéntico para todos los casos**.
@@ -118,8 +110,6 @@ lenguaje visual del `PhasePlaceholder`:
 - Cablear los 4 sitios: cambiar el state de error de `string` a `kind`; render `<ConnectionError>` con
   el `onRetry` correspondiente (`load`, `handleOpen`, `handlePredict`, refetch de `fetchTeams`).
 - i18n (`locales/types.ts` + es + en): bloque `errors` con `retry` + `{ title, body }` por `kind`.
-- **Companion opcional de PR3:** mientras corre el pre-flight a `/health`, el `PredictLoader` puede
-  mostrar "Despertando el servidor…" en lugar de "Corriendo simulaciones" (estado de carga honesto).
 
 **Done cuando:** toda desconexión muestra la tarjeta localizada con la causa reconocible + reintento
 funcional desde los 4 sitios, **sin strings de error hardcodeados en `api.ts`** y sin recargar la página.
