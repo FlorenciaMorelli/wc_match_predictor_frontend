@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { MatchStatus, PlayerSlot, PredictResponse, ScoreProbability } from "@/types";
 import FlagImage from "./flag-image";
 import { useLanguage, teamName } from "@/lib/i18n";
@@ -441,6 +441,42 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB }
     p_advance_b,
   } = result;
 
+  // Traducción automática de la narrativa (es→en) cuando la app está en inglés.
+  // El estado guarda { source, result } para que el display se derive de forma pura:
+  // si source no matchea la narrativa actual (nuevo partido) se muestra el original
+  // automáticamente, sin necesidad de un setState síncrono en el efecto.
+  const [narrativeTranslation, setNarrativeTranslation] = useState<{
+    source: string;
+    result: string;
+  } | null>(null);
+  const narrativeDisplay =
+    locale === "en" && narrativeTranslation?.source === narrative
+      ? narrativeTranslation.result
+      : narrative;
+  useEffect(() => {
+    if (locale !== "en" || !narrative) return;
+    let cancelled = false;
+    fetch("/api/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: narrative,
+        // src: nombre en español tal como aparece en la narrativa del backend.
+        // dst: nombre canónico en inglés que el sistema ya conoce.
+        termA: { src: teamAEs, dst: team_a },
+        termB: { src: teamBEs, dst: team_b },
+      }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && typeof data?.translated === "string") {
+          setNarrativeTranslation({ source: narrative, result: data.translated });
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [narrative, locale, teamAEs, teamBEs, team_a, team_b]);
+
   // Nombre a mostrar según idioma. Se nombran igual que los campos del response
   // para no tocar cada uso; el valor ya respeta el locale (en = canónico, es = _es).
   const team_a_es = teamName(team_a, teamAEs, locale);
@@ -734,7 +770,7 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB }
         <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-ink-subtle">
           {t.result.analysis}
         </p>
-        <p className="text-sm leading-7 text-ink-muted">{narrative}</p>
+        <p className="text-sm leading-7 text-ink-muted">{narrativeDisplay}</p>
       </div>
 
       <div className="rounded-xl border border-line px-5 py-4">
