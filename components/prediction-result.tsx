@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { MatchStatus, PredictResponse, ScoreProbability } from "@/types";
+import type { MatchStatus, PlayerSlot, PredictResponse, ScoreProbability } from "@/types";
 import FlagImage from "./flag-image";
 import { useLanguage, teamName } from "@/lib/i18n";
 
@@ -150,14 +150,19 @@ function Scorelines({
 // Una ficha de jugador en la cancha: disco en el color del equipo (anillo blanco
 // + sombra y brillo sutil) y el nombre en un chip translúcido para que se lea
 // sobre el césped. Nombre tal cual de ESPN, a 2 líneas máx.
-function PitchPlayer({ name, color }: { name: string; color: string }) {
+// Cuando hay dorsal real (jersey), lo muestra dentro del disco en lugar del brillo.
+function PitchPlayer({ name, color, jersey }: { name: string; color: string; jersey?: number | null }) {
   return (
     <div className="flex w-[4.25rem] flex-col items-center gap-1">
       <span
-        className="relative h-6 w-6 rounded-full border-2 border-white shadow-[0_1px_3px_rgba(0,0,0,0.45)]"
+        className="relative flex h-6 w-6 items-center justify-center rounded-full border-2 border-white shadow-[0_1px_3px_rgba(0,0,0,0.45)]"
         style={{ backgroundColor: color }}
       >
-        <span className="absolute inset-x-[3px] top-[3px] h-1.5 rounded-full bg-white/35" />
+        {jersey != null ? (
+          <span className="text-[0.5rem] font-bold leading-none text-white">{jersey}</span>
+        ) : (
+          <span className="absolute inset-x-[3px] top-[3px] h-1.5 rounded-full bg-white/35" />
+        )}
       </span>
       <span
         title={name}
@@ -170,13 +175,69 @@ function PitchPlayer({ name, color }: { name: string; color: string }) {
 }
 
 // Esquema de cancha con identidad WC2026: césped verde a rayas, marcas blancas
-// reglamentarias y acentos dorados (firma del Mundial + franja tricolor). El
-// backend manda los 11 en orden ESPN sin posición, así que asumimos un 4-3-3 y
-// lo avisamos abajo ("posiciones aproximadas"). Si no vienen 11, caemos a lista.
-function LineupPitch({ players, color }: { players: string[]; color: string }) {
+// reglamentarias y acentos dorados (firma del Mundial + franja tricolor).
+// Cuando el backend manda formation + lineup_detail, dibuja la formación real con
+// dorsales. Si no, cae a 4-3-3 estimado desde lineup_a (orden ESPN). Si hay menos
+// de 11 nombres y no hay detail, lista plana.
+function LineupPitch({
+  players,
+  color,
+  formation,
+  detail,
+}: {
+  players: string[];
+  color: string;
+  formation?: string | null;
+  detail?: PlayerSlot[] | null;
+}) {
   const { t } = useLanguage();
 
-  if (players.length !== 11) {
+  type RenderLine = { label: string; names: string[]; jerseys: (number | null)[] };
+
+  // Intenta construir líneas desde la formación real del backend.
+  // "4-4-2" → lineSizes [1,4,4,2] → distribuye detail por formation_place.
+  const realLines: RenderLine[] | null = (() => {
+    if (!formation || !detail || detail.length !== 11) return null;
+    const nums = formation.split("-").map(Number);
+    if (nums.length < 2 || nums.some((n) => !Number.isInteger(n) || n < 1)) return null;
+    if (nums.reduce((a, b) => a + b, 0) !== 10) return null;
+    const lineSizes = [1, ...nums];
+    const sorted = [...detail].sort(
+      (a, b) => (a.formation_place ?? 99) - (b.formation_place ?? 99)
+    );
+    const labelFor = (i: number): string => {
+      if (i === 0) return t.result.lineGk;
+      if (i === lineSizes.length - 1) return t.result.lineFwd;
+      if (i === 1) return t.result.lineDef;
+      return t.result.lineMid;
+    };
+    let cursor = 0;
+    const lines = lineSizes.map((size, i) => {
+      const slots = sorted.slice(cursor, cursor + size);
+      cursor += size;
+      return {
+        label: labelFor(i),
+        names: slots.map((s) => s.name),
+        jerseys: slots.map((s) => s.jersey),
+      };
+    });
+    return [...lines].reverse(); // FWD arriba → GK abajo en la vista
+  })();
+
+  // Fallback 4-3-3 desde nombres ESPN cuando no hay formation/detail.
+  const fallbackLines: RenderLine[] =
+    players.length === 11
+      ? [
+          { label: t.result.lineFwd, names: players.slice(8, 11), jerseys: [null, null, null] },
+          { label: t.result.lineMid, names: players.slice(5, 8), jerseys: [null, null, null] },
+          { label: t.result.lineDef, names: players.slice(1, 5), jerseys: [null, null, null, null] },
+          { label: t.result.lineGk, names: players.slice(0, 1), jerseys: [null] },
+        ]
+      : [];
+
+  const renderLines = realLines ?? fallbackLines;
+
+  if (renderLines.length === 0) {
     return (
       <ol className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 rounded-xl bg-canvas px-4 py-3 text-sm text-ink-muted">
         {players.map((name) => (
@@ -185,14 +246,6 @@ function LineupPitch({ players, color }: { players: string[]; color: string }) {
       </ol>
     );
   }
-
-  // De arriba (delanteros) hacia abajo (arquero).
-  const lines: { label: string; names: string[] }[] = [
-    { label: t.result.lineFwd, names: players.slice(8, 11) },
-    { label: t.result.lineMid, names: players.slice(5, 8) },
-    { label: t.result.lineDef, names: players.slice(1, 5) },
-    { label: t.result.lineGk, names: players.slice(0, 1) },
-  ];
 
   const gold = "var(--gold)";
 
@@ -240,14 +293,14 @@ function LineupPitch({ players, color }: { players: string[]; color: string }) {
 
           {/* Jugadores (delanteros arriba → arquero abajo) */}
           <div className="absolute inset-0 flex flex-col justify-between px-3 py-6">
-            {lines.map((line) => (
-              <div key={line.label} className="flex items-center">
+            {renderLines.map((line, i) => (
+              <div key={i} className="flex items-center">
                 <span className="w-7 shrink-0 text-right text-[0.625rem] font-semibold uppercase tracking-wide text-white/40">
                   {line.label}
                 </span>
                 <div className="flex flex-1 justify-around gap-1">
-                  {line.names.map((name) => (
-                    <PitchPlayer key={name} name={name} color={color} />
+                  {line.names.map((name, j) => (
+                    <PitchPlayer key={j} name={name} color={color} jersey={line.jerseys[j]} />
                   ))}
                 </div>
                 <span className="w-7 shrink-0" aria-hidden />
@@ -257,7 +310,7 @@ function LineupPitch({ players, color }: { players: string[]; color: string }) {
         </div>
       </div>
       <p className="mt-2 text-center text-[0.6875rem] text-ink-subtle">
-        {t.result.lineupApprox}
+        {realLines ? formation! : t.result.lineupApprox}
       </p>
     </div>
   );
@@ -276,6 +329,8 @@ function TeamLineup({
   color,
   pendingNote,
   started,
+  formation,
+  detail,
 }: {
   flag: string;
   name: string;
@@ -284,6 +339,8 @@ function TeamLineup({
   color: string;
   pendingNote: string;
   started: boolean;
+  formation?: string | null;
+  detail?: PlayerSlot[] | null;
 }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -344,7 +401,7 @@ function TeamLineup({
       </div>
 
       {hasLineup && open && players && (
-        <LineupPitch players={players} color={color} />
+        <LineupPitch players={players} color={color} formation={formation} detail={detail} />
       )}
     </div>
   );
@@ -373,6 +430,10 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB }
     lineup_confirmed_b,
     lineup_a,
     lineup_b,
+    formation_a,
+    formation_b,
+    lineup_detail_a,
+    lineup_detail_b,
     is_knockout,
     p_penalties,
     p_advance_a,
@@ -671,6 +732,8 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB }
             color={TEAM_A}
             pendingNote={lineupPendingNote}
             started={hasStarted}
+            formation={formation_a}
+            detail={lineup_detail_a}
           />
           <TeamLineup
             flag={flag_b}
@@ -680,6 +743,8 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB }
             color={TEAM_B}
             pendingNote={lineupPendingNote}
             started={hasStarted}
+            formation={formation_b}
+            detail={lineup_detail_b}
           />
         </div>
       </div>
