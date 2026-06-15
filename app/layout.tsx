@@ -10,9 +10,23 @@ const archivo = Archivo({
 });
 
 export const metadata: Metadata = {
-  title: "Predictor del Mundial 2026",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
+  ),
+  title: {
+    default: "Predictor del Mundial 2026",
+    template: "%s | Predictor Mundial 2026",
+  },
   description:
     "Elegí dos selecciones y conocé las probabilidades del resultado, calculadas con modelos estadísticos sobre partidos reales.",
+  openGraph: {
+    type: "website",
+    title: "Predictor del Mundial 2026",
+    description:
+      "Probabilidades estadísticas para cada partido del torneo. Formaciones, análisis y predicciones en tiempo real.",
+    locale: "es_AR",
+    alternateLocale: "en_US",
+  },
 };
 
 export default function RootLayout({
