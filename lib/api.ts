@@ -14,10 +14,12 @@ import type {
   Team,
 } from "@/types";
 
-// Timeout de seguridad generoso: el predict puede tardar ~150s en Render. Lo
-// dejamos por ENCIMA del proxyTimeout de next.config (180s) para que, si algo se
-// cuelga, el cliente reciba el error del proxy en vez de abortar antes de tiempo.
-const REQUEST_TIMEOUT_MS = 190_000;
+// Timeout para requests normales (fixture, teams). Generoso pero no crítico.
+const REQUEST_TIMEOUT_MS = 30_000;
+// Timeout para el predict: el modelo puede tardar ~150s en Render en frío.
+// 240s da margen sobre el proxyTimeout de next.config para que el cliente reciba
+// el error del proxy antes de que el AbortController lo corte por su cuenta.
+const PREDICT_TIMEOUT_MS = 240_000;
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
@@ -87,14 +89,97 @@ export async function fetchFixture(daysAhead = 10): Promise<FixtureMatch[]> {
 }
 
 // ---------------------------------------------------------------------------
+// Health / cold-start resilience
+// ---------------------------------------------------------------------------
+
+// Tiempo máximo por intento de health check y demora entre intentos.
+const HEALTH_TIMEOUT_MS = 4_000;
+const HEALTH_POLL_DELAY_MS = 3_000;
+const HEALTH_MAX_POLLS = 5;
+
+// Espera (sin lanzar) hasta que /health responda predictor="ready", o hasta
+// agotar los intentos. Si se agota, el predict corre igual y maneja el error.
+async function pollUntilReady(): Promise<void> {
+  for (let i = 0; i < HEALTH_MAX_POLLS; i++) {
+    try {
+      const res = await fetch("/api/health", {
+        signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
+      });
+      if (res.ok) {
+        const body = await res.json().catch(() => null);
+        if (body?.predictor === "ready") return;
+      }
+    } catch {
+      // timeout de red: el servidor está levantando, seguimos esperando
+    }
+    if (i < HEALTH_MAX_POLLS - 1) {
+      await new Promise((r) => setTimeout(r, HEALTH_POLL_DELAY_MS));
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Predicción
 // ---------------------------------------------------------------------------
 
 export async function predictMatch(
   req: PredictRequest
 ): Promise<PredictResponse> {
-  return apiFetch<PredictResponse>("/api/predict", {
-    method: "POST",
-    body: JSON.stringify(req),
-  });
+  // Pre-flight: esperamos a que el predictor cargue su modelo antes de mandar
+  // la request pesada. Evita el cold-start de ~150s en Render mandando antes
+  // de que el predictor esté disponible.
+  await pollUntilReady();
+
+  // Reintentamos hasta 2 veces en 503: puede aparecer en la ventana entre que
+  // /health dice "ready" y el predictor procesa su primer request real.
+  const MAX_RETRIES = 2;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch("/api/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req),
+        signal: AbortSignal.timeout(PREDICT_TIMEOUT_MS),
+      });
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "TimeoutError") {
+        throw new Error(
+          "El servidor está tardando más de lo normal (puede estar despertando). Esperá unos segundos y reintentá."
+        );
+      }
+      throw new Error(
+        "No pudimos conectar con el servidor. Revisá tu conexión y reintentá."
+      );
+    }
+
+    if (res.status === 503 && attempt < MAX_RETRIES) {
+      await new Promise((r) => setTimeout(r, 5_000));
+      continue;
+    }
+
+    if (!res.ok) {
+      if (res.status === 503) {
+        throw new Error(
+          "El predictor se está iniciando. Probá de nuevo en unos segundos."
+        );
+      }
+      if (res.status === 502 || res.status === 504) {
+        throw new Error(
+          "El servidor tardó demasiado en responder. Reintentá en un momento."
+        );
+      }
+      const detail = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(
+        typeof detail.detail === "string"
+          ? detail.detail
+          : JSON.stringify(detail.detail)
+      );
+    }
+
+    return res.json() as Promise<PredictResponse>;
+  }
+  throw new Error(
+    "El predictor se está iniciando. Probá de nuevo en unos segundos."
+  );
 }
