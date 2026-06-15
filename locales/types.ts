@@ -97,6 +97,8 @@ export type Translations = {
     confidencePhrase: (level: string) => string;
     score: string;
     vs: string;
+    venueNeutral: string;
+    venueHome: (name: string) => string;
     compare: {
       actual: string;
       surprise: string;
