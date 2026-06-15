@@ -69,6 +69,9 @@ export type Translations = {
   };
   modal: { close: string };
   theme: { toLight: string; toDark: string };
+  footer: {
+    madeBy: string;
+  };
   result: {
     draw: string;
     winsTeamHeadline: (name: string) => string;

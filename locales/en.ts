@@ -121,6 +121,9 @@ export const en: Translations = {
         "Baseline model. Estimates each team's goals independently.",
     },
   },
+  footer: {
+    madeBy: "Built by",
+  },
   modal: { close: "Close" },
   theme: {
     toLight: "Switch to light mode",
