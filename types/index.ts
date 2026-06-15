@@ -31,6 +31,13 @@ export interface FixtureMatch {
   venue: string;
 }
 
+export interface PlayerSlot {
+  name: string;
+  jersey: number | null;
+  position: string | null;
+  formation_place: number | null;
+}
+
 export interface PredictRequest {
   team_a_id: number;   // ID numérico de /api/teams
   team_b_id: number;
@@ -82,6 +89,12 @@ export interface PredictResponse {
   // disponible. Garantía del backend: confirmed === true ⟺ array de 11 nombres.
   lineup_a: string[] | null;
   lineup_b: string[] | null;
+  // Formación real (ej. "4-4-2") y detalle de jugadores con dorsal + formation_place.
+  // Opcionales: solo presentes cuando el backend tiene datos estructurados del XI.
+  formation_a: string | null;
+  formation_b: string | null;
+  lineup_detail_a: PlayerSlot[] | null;
+  lineup_detail_b: PlayerSlot[] | null;
 
   // Narrativa en español lista para mostrar al usuario
   narrative: string;
