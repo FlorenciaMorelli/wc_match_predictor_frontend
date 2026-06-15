@@ -47,3 +47,37 @@ export function cityForVenue(venue: string | null | undefined, locale: Locale): 
   if (!venue) return null;
   return VENUE_CITY[venue.trim()]?.[locale] ?? null;
 }
+
+// ISO2 del país anfitrión por estadio. Coincide con FixtureMatch.flag_a / flag_b
+// (que vienen como ISO2 de flagcdn.com). Solo los 3 países sede del WC2026.
+const VENUE_HOST: Record<string, string> = {
+  // Estados Unidos
+  "MetLife Stadium": "us",
+  "SoFi Stadium": "us",
+  "AT&T Stadium": "us",
+  "NRG Stadium": "us",
+  "Mercedes-Benz Stadium": "us",
+  "Lincoln Financial Field": "us",
+  "Levi's Stadium": "us",
+  "Lumen Field": "us",
+  "Hard Rock Stadium": "us",
+  "Gillette Stadium": "us",
+  "GEHA Field at Arrowhead Stadium": "us",
+  // México
+  "Estadio Banorte": "mx",
+  "Estadio BBVA": "mx",
+  "Estadio Akron": "mx",
+  // Canadá
+  "BC Place": "ca",
+  "BMO Field": "ca",
+};
+
+/**
+ * Devuelve el ISO2 del país anfitrión del estadio, o `null` si no está mapeado.
+ * Usarlo junto a `FixtureMatch.flag_a/flag_b` para derivar el equipo local
+ * sin depender del campo `home_team_id` (que solo viene en PredictResponse).
+ */
+export function homeNationIso(venue: string | null | undefined): string | null {
+  if (!venue) return null;
+  return VENUE_HOST[venue.trim()] ?? null;
+}
