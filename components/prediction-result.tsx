@@ -423,9 +423,10 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB }
     xg_b,
     top_scorelines,
     narrative,
-    venue_label,
     neutral,
     home_team_id,
+    team_a_id,
+    team_b_id,
     lineup_confirmed_a,
     lineup_confirmed_b,
     lineup_a,
@@ -517,7 +518,22 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB }
       ? t.result.confidenceMedium
       : t.result.confidenceLow;
 
+  // Etiqueta de sede construida en el front (localizada), en vez del venue_label
+  // que el backend manda ya formateado en español. neutral → "Cancha neutral";
+  // con local → "Local: {equipo}" usando el nombre ya localizado. Si no se puede
+  // determinar el local (home_team_id no matchea ninguno), se oculta.
   const isHome = !neutral && home_team_id != null;
+  const homeName =
+    home_team_id === team_a_id
+      ? team_a_es
+      : home_team_id === team_b_id
+      ? team_b_es
+      : null;
+  const venueLabel = neutral
+    ? t.result.venueNeutral
+    : homeName != null
+    ? t.result.venueHome(homeName)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -571,15 +587,17 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB }
         </div>
       </div>
 
-      <div className="flex justify-center">
-        <span
-          className={`rounded-full px-3.5 py-1 text-xs font-medium ${
-            isHome ? "bg-brand-soft text-brand" : "bg-canvas text-ink-muted"
-          }`}
-        >
-          {venue_label}
-        </span>
-      </div>
+      {venueLabel && (
+        <div className="flex justify-center">
+          <span
+            className={`rounded-full px-3.5 py-1 text-xs font-medium ${
+              isHome ? "bg-brand-soft text-brand" : "bg-canvas text-ink-muted"
+            }`}
+          >
+            {venueLabel}
+          </span>
+        </div>
+      )}
 
       {/* Probabilidades 1X2. En finalizados se resalta el desenlace real (outline +
           "real") y se atenúan los otros; en el resto, las tres planas. */}

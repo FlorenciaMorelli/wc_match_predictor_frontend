@@ -154,6 +154,8 @@ export const es: Translations = {
     confidencePhrase: (level) => `confianza ${level.toLowerCase()}`,
     score: "Marcador",
     vs: "vs",
+    venueNeutral: "Cancha neutral",
+    venueHome: (name) => `Local: ${name}`,
     compare: {
       actual: "real",
       surprise: "Resultado inesperado",
