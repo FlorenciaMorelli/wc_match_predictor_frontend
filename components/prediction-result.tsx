@@ -20,6 +20,164 @@ const TEAM_A = "var(--result-a)";
 const TEAM_B = "var(--result-b)";
 const DRAW   = "var(--result-draw)";
 
+// Equipaciones por ISO2 (flagcdn). home = camiseta titular, away = alternativa.
+// Cuando dos equipos tienen colores similares, team B cambia a away automáticamente.
+const KITS: Record<string, { home: string; away: string }> = {
+  // CONMEBOL
+  ar: { home: "#74ACDF", away: "#FFFFFF" }, // Argentina – celeste / blanca
+  br: { home: "#FABE18", away: "#003082" }, // Brasil – amarilla / azul
+  co: { home: "#FCD116", away: "#003087" }, // Colombia – amarilla / azul
+  ec: { home: "#FFD100", away: "#003087" }, // Ecuador – amarilla / azul
+  uy: { home: "#5EB6E4", away: "#000000" }, // Uruguay – celeste / negra
+  ve: { home: "#CF142B", away: "#FFFFFF" }, // Venezuela – roja / blanca
+  py: { home: "#D52B1E", away: "#FFFFFF" }, // Paraguay – roja / blanca
+  cl: { home: "#D52B1E", away: "#FFFFFF" }, // Chile – roja / blanca
+  pe: { home: "#D52B1E", away: "#FFFFFF" }, // Perú – roja / blanca
+  bo: { home: "#007940", away: "#FFFFFF" }, // Bolivia – verde / blanca
+  // CONCACAF
+  us: { home: "#FFFFFF", away: "#041E42" }, // USA – blanca / azul marino
+  mx: { home: "#006847", away: "#000000" }, // México – verde / negra
+  ca: { home: "#CC0000", away: "#000000" }, // Canadá – roja / negra
+  pa: { home: "#CF142B", away: "#FFFFFF" }, // Panamá – roja / blanca
+  hn: { home: "#0073CF", away: "#FFFFFF" }, // Honduras – azul / blanca
+  cr: { home: "#002B7F", away: "#FFFFFF" }, // Costa Rica – azul / blanca
+  jm: { home: "#FFCD00", away: "#000000" }, // Jamaica – amarilla / negra
+  ht: { home: "#16438F", away: "#FFFFFF" }, // Haití – azul / blanca
+  cw: { home: "#003DA5", away: "#FFFFFF" }, // Curazao – azul / blanca
+  tt: { home: "#DA1A35", away: "#FFFFFF" }, // Trinidad y Tobago – roja / blanca
+  gt: { home: "#4997D0", away: "#FFFFFF" }, // Guatemala – celeste / blanca
+  sv: { home: "#1B3D8F", away: "#FFFFFF" }, // El Salvador – azul / blanca
+  sr: { home: "#007749", away: "#FFFFFF" }, // Surinam – verde / blanca
+  // UEFA
+  de: { home: "#FFFFFF", away: "#000000" }, // Alemania – blanca / negra
+  fr: { home: "#002395", away: "#FFFFFF" }, // Francia – azul / blanca
+  es: { home: "#AA151B", away: "#FFFFFF" }, // España – roja / blanca
+  pt: { home: "#006600", away: "#AA151B" }, // Portugal – verde / roja
+  "gb-eng": { home: "#FFFFFF", away: "#CC0000" }, // Inglaterra – blanca / roja
+  gb: { home: "#FFFFFF", away: "#CC0000" },        // fallback gb
+  nl: { home: "#FF6600", away: "#000000" }, // Países Bajos – naranja / negra
+  it: { home: "#003399", away: "#FFFFFF" }, // Italia – azul / blanca
+  be: { home: "#CC0000", away: "#000000" }, // Bélgica – roja / negra
+  hr: { home: "#CC0000", away: "#003399" }, // Croacia – roja / azul
+  tr: { home: "#CC0000", away: "#FFFFFF" }, // Turquía – roja / blanca
+  ch: { home: "#FF0000", away: "#000000" }, // Suiza – roja / negra
+  at: { home: "#CC0000", away: "#FFFFFF" }, // Austria – roja / blanca
+  rs: { home: "#C6363C", away: "#FFFFFF" }, // Serbia – roja / blanca
+  ua: { home: "#FFD700", away: "#003087" }, // Ucrania – amarilla / azul
+  "gb-sct": { home: "#003399", away: "#CC0000" }, // Escocia – azul / roja
+  pl: { home: "#FFFFFF", away: "#CC0000" }, // Polonia – blanca / roja
+  ro: { home: "#FFD700", away: "#003087" }, // Rumania – amarilla / azul
+  hu: { home: "#CC0000", away: "#FFFFFF" }, // Hungría – roja / blanca
+  cz: { home: "#D7141A", away: "#FFFFFF" }, // Rep. Checa – roja / blanca
+  si: { home: "#003DA5", away: "#FFFFFF" }, // Eslovenia – azul / blanca
+  sk: { home: "#003DA5", away: "#CC0000" }, // Eslovaquia – azul / roja
+  no: { home: "#BA0C2F", away: "#FFFFFF" }, // Noruega – roja / blanca
+  dk: { home: "#C8102E", away: "#FFFFFF" }, // Dinamarca – roja / blanca
+  se: { home: "#FECC00", away: "#005CBF" }, // Suecia – amarilla / azul
+  gr: { home: "#004C98", away: "#FFFFFF" }, // Grecia – azul / blanca
+  "gb-wls": { home: "#C8102E", away: "#00B5A0" }, // Gales – roja / verde
+  ie: { home: "#009A44", away: "#FFFFFF" }, // Irlanda – verde / blanca
+  ba: { home: "#002F6C", away: "#FFFFFF" }, // Bosnia y Herzegovina – azul / blanca
+  is: { home: "#003897", away: "#FFFFFF" }, // Islandia – azul / blanca
+  al: { home: "#E41B17", away: "#000000" }, // Albania – roja / negra
+  // AFC
+  jp: { home: "#003087", away: "#FFFFFF" }, // Japón – azul / blanca
+  kr: { home: "#C00000", away: "#FFFFFF" }, // Corea del Sur – roja / blanca
+  au: { home: "#FFB81C", away: "#00843D" }, // Australia – dorada / verde
+  sa: { home: "#006C35", away: "#FFFFFF" }, // Arabia Saudita – verde / blanca
+  ir: { home: "#FFFFFF", away: "#239F40" }, // Irán – blanca / verde
+  qa: { home: "#8D153A", away: "#FFFFFF" }, // Qatar – granate / blanca
+  jo: { home: "#007A3D", away: "#FFFFFF" }, // Jordania – verde / blanca
+  uz: { home: "#1EB53A", away: "#003087" }, // Uzbekistán – verde / azul
+  iq: { home: "#CC0000", away: "#FFFFFF" }, // Irak – roja / blanca
+  bh: { home: "#CC0000", away: "#FFFFFF" }, // Bahréin – roja / blanca
+  om: { home: "#DB161B", away: "#FFFFFF" }, // Omán – roja / blanca
+  id: { home: "#CC0000", away: "#FFFFFF" }, // Indonesia – roja / blanca
+  cn: { home: "#CC0000", away: "#FFFFFF" }, // China – roja / blanca
+  // CAF
+  cv: { home: "#003082", away: "#FFFFFF" }, // Cabo Verde – azul / blanca
+  ma: { home: "#C1272D", away: "#FFFFFF" }, // Marruecos – roja / blanca
+  sn: { home: "#00853F", away: "#FFFFFF" }, // Senegal – verde / blanca
+  ng: { home: "#008751", away: "#FFFFFF" }, // Nigeria – verde / blanca
+  eg: { home: "#CC0000", away: "#FFFFFF" }, // Egipto – roja / blanca
+  cm: { home: "#007A5E", away: "#FFFFFF" }, // Camerún – verde / blanca
+  ci: { home: "#FF6600", away: "#003087" }, // Costa de Marfil – naranja / azul
+  za: { home: "#007A5E", away: "#FFD700" }, // Sudáfrica – verde / amarilla
+  dz: { home: "#FFFFFF", away: "#006233" }, // Argelia – blanca / verde
+  gh: { home: "#006B3F", away: "#FFFFFF" }, // Ghana – verde / blanca
+  ml: { home: "#009A44", away: "#FFFFFF" }, // Mali – verde / blanca
+  cd: { home: "#007FFF", away: "#FFFFFF" }, // Congo RD – azul / blanca
+  tz: { home: "#1EB53A", away: "#003087" }, // Tanzania – verde / azul
+  ke: { home: "#CC0000", away: "#FFFFFF" }, // Kenia – roja / blanca
+  tn: { home: "#E70013", away: "#FFFFFF" }, // Túnez – roja / blanca
+  ao: { home: "#CE1126", away: "#000000" }, // Angola – roja / negra
+  gn: { home: "#CE1126", away: "#FFFFFF" }, // Guinea – roja / blanca
+  // OFC
+  nz: { home: "#FFFFFF", away: "#2B3A8C" }, // Nueva Zelanda – blanca / azul
+};
+
+// ─── Kit color helpers ────────────────────────────────────────────────────────
+
+function hexToRgb(hex: string): [number, number, number] {
+  const n = parseInt(hex.replace("#", ""), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+// Luminancia perceptual (0–255). > 140 = color claro.
+function isLightColor(hex: string): boolean {
+  if (!hex.startsWith("#")) return false;
+  const [r, g, b] = hexToRgb(hex);
+  return 0.299 * r + 0.587 * g + 0.114 * b > 140;
+}
+
+// Familia de color general (rojo, azul, blanca, etc.) a partir del hex. La idea
+// es agrupar por percepción, no por hex exacto: #AA151B y #C1272D son ambos "red".
+// Se usa para detectar choque de camisetas sin importar el tono preciso.
+function colorFamily(hex: string): string {
+  if (!hex.startsWith("#")) return "other";
+  const [r, g, b] = hexToRgb(hex).map((v) => v / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  // Acromáticos: muy claro → blanca, muy oscuro → negra, gris medio → al más cercano.
+  if (l > 0.82) return "white";
+  if (l < 0.12) return "black";
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  if (s < 0.15) return l > 0.5 ? "white" : "black";
+  // Cromáticos: bucketizar por matiz (HSL hue).
+  let h = 0;
+  if (max === r) h = ((g - b) / d) % 6;
+  else if (max === g) h = (b - r) / d + 2;
+  else h = (r - g) / d + 4;
+  h = (h * 60 + 360) % 360;
+  if (h < 20 || h >= 345) return "red";
+  if (h < 45) return "orange";
+  if (h < 70) return "yellow";
+  if (h < 170) return "green";
+  if (h < 255) return "blue";
+  if (h < 290) return "purple";
+  return "red"; // magenta/rosa → familia roja
+}
+
+// Camiseta por defecto para países sin kit definido: blanca.
+const DEFAULT_KIT = "#FFFFFF";
+
+// Resuelve qué color usa cada equipo. Regla: team A siempre usa su titular; el
+// "obligado" a la suplente es SIEMPRE team B, y solo si comparte familia de color
+// general con A (ambos rojos, ambos azules, ambos blancos…), sin importar el hex.
+// Si un país no está en KITS, se usa la camiseta blanca por defecto.
+function resolveKitColors(
+  isoA: string,
+  isoB: string,
+): { colorA: string; colorB: string } {
+  const homeA = KITS[isoA]?.home ?? DEFAULT_KIT;
+  const homeB = KITS[isoB]?.home ?? DEFAULT_KIT;
+  const awayB = KITS[isoB]?.away ?? DEFAULT_KIT;
+  const colorB = colorFamily(homeA) === colorFamily(homeB) ? awayB : homeB;
+  return { colorA: homeA, colorB };
+}
+
 function scoreWinnerColor(a: number, b: number): string {
   if (a === b) return DRAW;
   return a > b ? TEAM_A : TEAM_B;
@@ -147,39 +305,176 @@ function Scorelines({
   );
 }
 
-// Una ficha de jugador en la cancha: disco en el color del equipo (anillo blanco
-// + sombra y brillo sutil) y el nombre en un chip translúcido para que se lea
-// sobre el césped. Nombre tal cual de ESPN, a 2 líneas máx.
-// Cuando hay dorsal real (jersey), lo muestra dentro del disco en lugar del brillo.
-function PitchPlayer({ name, color, jersey }: { name: string; color: string; jersey?: number | null }) {
+// ─── Tipos ────────────────────────────────────────────────────────────────────
+
+type RenderLine = {
+  names: string[];
+  jerseys: (number | null)[];
+  positions: (string | null)[];
+};
+
+// ─── JerseyIcon ───────────────────────────────────────────────────────────────
+// Silueta SVG de camiseta de fútbol. Tamaño controlado por className.
+// Incluye un reflejo sutil en la manga izquierda para dar sensación de tela.
+function JerseyIcon({
+  color,
+  number,
+  className = "w-7 h-8",
+  isGk = false,
+}: {
+  color: string;
+  number?: number | null;
+  className?: string;
+  isGk?: boolean;
+}) {
+  // Cuerpo = color REAL del kit (España rojo, Cabo Verde azul, etc.). El contraste
+  // contra el césped lo dan el contorno (halo) + el tag blanco del nombre, no el
+  // cuerpo. Ribete/puños y dorsal se calculan para contrastar con el cuerpo.
+  const lightBody = isGk || isLightColor(color);
+  const bodyColor = isGk ? "var(--gold)" : color;
+  // Ribete del cuello y puños: oscuro sobre cuerpo claro, blanco sobre cuerpo oscuro.
+  const trimColor = lightBody ? "#1f2937" : "#ffffff";
+  // Banda tonal sutil para dar textura de tela sin falsear el color del kit.
+  const sashColor = lightBody ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.15)";
+  const numberColor = lightBody ? "#16181d" : "#ffffff";
+  // Halo de contorno: el complementario del cuerpo, para despegar del verde.
+  const outline = lightBody ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.85)";
+
   return (
-    <div className="flex w-[4.25rem] flex-col items-center gap-1">
-      <span
-        className="relative flex h-6 w-6 items-center justify-center rounded-full border-2 border-white shadow-[0_1px_3px_rgba(0,0,0,0.45)]"
-        style={{ backgroundColor: color }}
-      >
-        {jersey != null ? (
-          <span className="text-[0.5rem] font-bold leading-none text-white">{jersey}</span>
-        ) : (
-          <span className="absolute inset-x-[3px] top-[3px] h-1.5 rounded-full bg-white/35" />
-        )}
-      </span>
-      <span
-        title={name}
-        className="line-clamp-2 w-full rounded bg-black/40 px-1 py-0.5 text-center text-[0.625rem] font-semibold leading-tight text-white"
-      >
-        {name}
+    <svg
+      viewBox="0 0 24 28"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      {/* Cuerpo: cuello en V, hombros y mangas cortas */}
+      <path
+        d="M8,3 Q12,7 16,3 L23,7 L22,13 L18,12 L18,25 L6,25 L6,12 L2,13 L1,7 Z"
+        fill={bodyColor}
+        stroke={outline}
+        strokeWidth="1.1"
+        strokeLinejoin="round"
+      />
+      {/* Banda diagonal tonal (no altera el color base del kit) */}
+      <path d="M6,8 L9.5,8 L18,25 L14.5,25 Z" fill={sashColor} />
+      {/* Ribete del cuello en V */}
+      <path d="M8,3 Q12,7 16,3 L15,4.4 Q12,7.7 9,4.4 Z" fill={trimColor} />
+      {/* Puños de las mangas */}
+      <path d="M1,7 L2,13 L3.5,12.7 L2.6,7.55 Z" fill={trimColor} />
+      <path d="M23,7 L22,13 L20.5,12.7 L21.4,7.55 Z" fill={trimColor} />
+      {/* Dorsal */}
+      {number != null && (
+        <text
+          x="12"
+          y="19"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize={number >= 10 ? "7" : "8.5"}
+          fontWeight="800"
+          fill={numberColor}
+          stroke={bodyColor}
+          strokeWidth="0.5"
+          paintOrder="stroke"
+          fontFamily="system-ui, -apple-system, sans-serif"
+          letterSpacing="-0.4"
+        >
+          {number}
+        </text>
+      )}
+    </svg>
+  );
+}
+
+// ─── PlayerNode ───────────────────────────────────────────────────────────────
+// Camiseta + apellido con la fuente display del sitio (Archivo).
+// Convención Sofascore / FotMob: apellido solo, tooltip con nombre completo.
+function PlayerNode({
+  name,
+  color,
+  jersey,
+  position,
+  isGk = false,
+}: {
+  name: string;
+  color: string;
+  jersey?: number | null;
+  position?: string | null;
+  isGk?: boolean;
+}) {
+  const parts = name.trim().split(" ");
+  const surname = parts.length > 1 ? parts[parts.length - 1] : name;
+
+  return (
+    <div
+      className="flex w-12 flex-col items-center gap-0.5"
+      title={position ? `${name} · ${position}` : name}
+    >
+      <JerseyIcon
+        color={color}
+        number={jersey}
+        className="h-8 w-7 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] sm:h-9 sm:w-8"
+        isGk={isGk}
+      />
+      <span className="font-display whitespace-nowrap rounded-[3px] bg-white/90 px-1 py-px text-center text-[0.6rem] font-bold leading-tight tracking-tight text-slate-900 shadow-sm sm:text-[0.68rem]">
+        {surname}
       </span>
     </div>
   );
 }
 
-// Esquema de cancha con identidad WC2026: césped verde a rayas, marcas blancas
-// reglamentarias y acentos dorados (firma del Mundial + franja tricolor).
-// Cuando el backend manda formation + lineup_detail, dibuja la formación real con
-// dorsales. Si no, cae a 4-3-3 estimado desde lineup_a (orden ESPN). Si hay menos
-// de 11 nombres y no hay detail, lista plana.
-function LineupPitch({
+// ─── computeFormationLines ────────────────────────────────────────────────────
+// Convierte plantel + datos de formación en líneas de renderizado.
+// Retorna [FWD, ..., GK] (de adelante hacia atrás).
+// Para Team A (mitad inferior): usar tal cual (FWD cerca del centro).
+// Para Team B (mitad superior): invertir antes de renderizar (GK arriba).
+function computeFormationLines(
+  players: string[],
+  formation: string | null | undefined,
+  detail: PlayerSlot[] | null | undefined,
+): RenderLine[] {
+  if (formation && detail && detail.length === 11) {
+    const nums = formation.split("-").map(Number);
+    if (
+      nums.length >= 2 &&
+      !nums.some((n) => !Number.isInteger(n) || n < 1) &&
+      nums.reduce((a, b) => a + b, 0) === 10
+    ) {
+      const lineSizes = [1, ...nums];
+      const sorted = [...detail].sort(
+        (a, b) => (a.formation_place ?? 99) - (b.formation_place ?? 99),
+      );
+      let cursor = 0;
+      const lines: RenderLine[] = lineSizes.map((size) => {
+        const slots = sorted.slice(cursor, cursor + size);
+        cursor += size;
+        return {
+          names: slots.map((s) => s.name),
+          jerseys: slots.map((s) => s.jersey),
+          positions: slots.map((s) => s.position),
+        };
+      });
+      return [...lines].reverse(); // [FWD, ..., GK]
+    }
+  }
+
+  if (players.length === 11) {
+    return [
+      { names: players.slice(8, 11), jerseys: [null, null, null], positions: [null, null, null] },
+      { names: players.slice(5, 8), jerseys: [null, null, null], positions: [null, null, null] },
+      { names: players.slice(1, 5), jerseys: [null, null, null, null], positions: [null, null, null, null] },
+      { names: players.slice(0, 1), jerseys: [null], positions: [null] },
+    ];
+  }
+
+  return [];
+}
+
+// ─── SinglePitch ──────────────────────────────────────────────────────────────
+// Cancha individual por equipo: verde oscuro premium, marcas reglamentarias en
+// SVG overlay, camisetas con dorsal. FWD arriba → GK abajo. Responsive.
+// Fondo sin rayas CSS para mantener coherencia con el diseño editorial del sitio.
+function SinglePitch({
   players,
   color,
   formation,
@@ -192,52 +487,9 @@ function LineupPitch({
 }) {
   const { t } = useLanguage();
 
-  type RenderLine = { label: string; names: string[]; jerseys: (number | null)[] };
+  const lines = computeFormationLines(players, formation, detail);
 
-  // Intenta construir líneas desde la formación real del backend.
-  // "4-4-2" → lineSizes [1,4,4,2] → distribuye detail por formation_place.
-  const realLines: RenderLine[] | null = (() => {
-    if (!formation || !detail || detail.length !== 11) return null;
-    const nums = formation.split("-").map(Number);
-    if (nums.length < 2 || nums.some((n) => !Number.isInteger(n) || n < 1)) return null;
-    if (nums.reduce((a, b) => a + b, 0) !== 10) return null;
-    const lineSizes = [1, ...nums];
-    const sorted = [...detail].sort(
-      (a, b) => (a.formation_place ?? 99) - (b.formation_place ?? 99)
-    );
-    const labelFor = (i: number): string => {
-      if (i === 0) return t.result.lineGk;
-      if (i === lineSizes.length - 1) return t.result.lineFwd;
-      if (i === 1) return t.result.lineDef;
-      return t.result.lineMid;
-    };
-    let cursor = 0;
-    const lines = lineSizes.map((size, i) => {
-      const slots = sorted.slice(cursor, cursor + size);
-      cursor += size;
-      return {
-        label: labelFor(i),
-        names: slots.map((s) => s.name),
-        jerseys: slots.map((s) => s.jersey),
-      };
-    });
-    return [...lines].reverse(); // FWD arriba → GK abajo en la vista
-  })();
-
-  // Fallback 4-3-3 desde nombres ESPN cuando no hay formation/detail.
-  const fallbackLines: RenderLine[] =
-    players.length === 11
-      ? [
-          { label: t.result.lineFwd, names: players.slice(8, 11), jerseys: [null, null, null] },
-          { label: t.result.lineMid, names: players.slice(5, 8), jerseys: [null, null, null] },
-          { label: t.result.lineDef, names: players.slice(1, 5), jerseys: [null, null, null, null] },
-          { label: t.result.lineGk, names: players.slice(0, 1), jerseys: [null] },
-        ]
-      : [];
-
-  const renderLines = realLines ?? fallbackLines;
-
-  if (renderLines.length === 0) {
+  if (lines.length === 0) {
     return (
       <ol className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 rounded-xl bg-canvas px-4 py-3 text-sm text-ink-muted">
         {players.map((name) => (
@@ -247,80 +499,101 @@ function LineupPitch({
     );
   }
 
-  const gold = "var(--gold)";
-
   return (
     <div className="mt-3">
-      <div className="overflow-hidden rounded-xl border border-line shadow-sm">
-        {/* Firma WC2026: franja tricolor (Canadá / México / EE.UU.) */}
+      <div
+        className="overflow-hidden rounded-xl border border-line shadow-md"
+        style={{ perspective: "900px" }}
+      >
         <div className="wc-tricolor h-1" />
 
-        {/* Campo */}
+        {/*
+          Mitad de cancha con perspectiva: rayas verticales que convergen al fondo.
+          rotateX + transform-origin: bottom → GK cerca del espectador, FWD al fondo.
+          viewBox 0 0 100 100 = mitad de cancha reglamentaria.
+        */}
         <div
-          className="relative min-h-[21rem]"
+          className="relative flex min-h-[22rem] flex-col sm:min-h-[27rem]"
           style={{
-            backgroundImage:
-              "repeating-linear-gradient(180deg, rgba(255,255,255,0.06) 0 1.25rem, rgba(255,255,255,0) 1.25rem 2.5rem), linear-gradient(170deg, #2f9e5e 0%, #1c7341 100%)",
+            background:
+              "repeating-linear-gradient(180deg, #1e5c30 0rem, #1e5c30 1.25rem, #175226 1.25rem, #175226 2.5rem)",
+            transform: "rotateX(20deg)",
+            transformOrigin: "bottom center",
           }}
         >
-          {/* Marcas reglamentarias (decorativas) */}
-          <span className="pointer-events-none absolute inset-3 rounded-sm border border-white/25" />
-          <span className="pointer-events-none absolute inset-x-3 top-1/2 h-px -translate-y-1/2 bg-white/25" />
-          <span className="pointer-events-none absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/25" />
-          {/* Áreas (penal + arco) arriba y abajo */}
-          <span className="pointer-events-none absolute left-1/2 top-3 h-14 w-44 -translate-x-1/2 border-x border-b border-white/25" />
-          <span className="pointer-events-none absolute left-1/2 top-3 h-7 w-24 -translate-x-1/2 border-x border-b border-white/25" />
-          <span className="pointer-events-none absolute bottom-3 left-1/2 h-14 w-44 -translate-x-1/2 border-x border-t border-white/25" />
-          <span className="pointer-events-none absolute bottom-3 left-1/2 h-7 w-24 -translate-x-1/2 border-x border-t border-white/25" />
-          {/* Arcos de córner */}
-          <span className="pointer-events-none absolute left-3 top-3 h-3 w-3 rounded-br-full border-b border-r border-white/25" />
-          <span className="pointer-events-none absolute right-3 top-3 h-3 w-3 rounded-bl-full border-b border-l border-white/25" />
-          <span className="pointer-events-none absolute bottom-3 left-3 h-3 w-3 rounded-tr-full border-r border-t border-white/25" />
-          <span className="pointer-events-none absolute bottom-3 right-3 h-3 w-3 rounded-tl-full border-l border-t border-white/25" />
-          {/* Acentos dorados WC2026: punto central + puntos de penal */}
-          <span
-            className="pointer-events-none absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
-            style={{ backgroundColor: gold }}
-          />
-          <span
-            className="pointer-events-none absolute left-1/2 top-[2.5rem] h-1.5 w-1.5 -translate-x-1/2 rounded-full"
-            style={{ backgroundColor: gold }}
-          />
-          <span
-            className="pointer-events-none absolute bottom-[2.5rem] left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full"
-            style={{ backgroundColor: gold }}
-          />
+          <svg
+            className="pointer-events-none absolute inset-0 h-full w-full"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            fill="none"
+          >
+            {/* Borde de la mitad de cancha */}
+            <rect x="3" y="2" width="94" height="96" stroke="white" strokeOpacity="0.55" strokeWidth="0.8" />
+            {/*
+              Semicírculo del círculo central: centro en la línea de mediocampo (y=2),
+              r=13. sweep=0 comba HACIA ADENTRO de la cancha (zona visible y>2),
+              de (37,2) pasando por (50,15) hasta (63,2). Con sweep=1 se dibujaba
+              hacia arriba, fuera del campo (por eso no se veía).
+              Stroke grueso porque la perspectiva comprime esta zona visualmente.
+            */}
+            <path d="M 37,2 A 13,13 0 0 0 63,2" stroke="white" strokeOpacity="0.7" strokeWidth="1.2" />
+            {/* Área grande (portería propia, abajo) */}
+            <rect x="22" y="67" width="56" height="31" stroke="white" strokeOpacity="0.5" strokeWidth="0.7" fill="none" />
+            {/* Área chica */}
+            <rect x="35" y="87" width="30" height="11" stroke="white" strokeOpacity="0.4" strokeWidth="0.6" fill="none" />
+            {/* Punto de penal */}
+            <circle cx="50" cy="76" r="1.1" fill="var(--gold)" fillOpacity="0.95" />
+            {/*
+              Arco D: semicírculo centrado en el punto de penal (50,76), r=16.
+              Intersecta el borde del área en x≈37 y x≈63 (y=67).
+              sweep=1 (horario) dibuja el arco hacia el mediocampo — "hacia afuera"
+              del área, pasando por (50,60). Correcto según reglamento FIFA.
+            */}
+            <path d="M 37,67 A 16,16 0 0 1 63,67" stroke="white" strokeOpacity="0.35" strokeWidth="0.6" />
+            {/*
+              Córners en línea de gol (abajo): arco de cuarto de círculo r=4.
+              Arrancan desde la línea de banda/gol y curvan HACIA adentro del campo.
+              La línea de mediocampo (y=2) NO lleva córners.
+            */}
+            {/* Inferior izquierdo: desde (3,94) en la banda, horario hasta (7,98) en la línea de gol */}
+            <path d="M 3,94 A 4,4 0 0 1 7,98" stroke="white" strokeOpacity="0.45" strokeWidth="0.6" />
+            {/* Inferior derecho: desde (93,98) en la línea de gol, antihorario hasta (97,94) en la banda */}
+            <path d="M 93,98 A 4,4 0 0 1 97,94" stroke="white" strokeOpacity="0.45" strokeWidth="0.6" />
+          </svg>
 
-          {/* Jugadores (delanteros arriba → arquero abajo) */}
-          <div className="absolute inset-0 flex flex-col justify-between px-3 py-6">
-            {renderLines.map((line, i) => (
-              <div key={i} className="flex items-center">
-                <span className="w-7 shrink-0 text-right text-[0.625rem] font-semibold uppercase tracking-wide text-white/40">
-                  {line.label}
-                </span>
-                <div className="flex flex-1 justify-around gap-1">
+          {/* Jugadores: FWD arriba (mediocampo) → GK abajo (portería propia) */}
+          <div className="relative z-10 flex flex-1 flex-col justify-around px-3 py-4">
+            {lines.map((line, i) => {
+              const isGkLine = i === lines.length - 1;
+              return (
+                <div key={i} className="flex items-center justify-around gap-1">
                   {line.names.map((name, j) => (
-                    <PitchPlayer key={j} name={name} color={color} jersey={line.jerseys[j]} />
+                    <PlayerNode
+                      key={j}
+                      name={name}
+                      color={color}
+                      jersey={line.jerseys[j]}
+                      position={line.positions[j]}
+                      isGk={isGkLine}
+                    />
                   ))}
                 </div>
-                <span className="w-7 shrink-0" aria-hidden />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
+
       <p className="mt-2 text-center text-[0.6875rem] text-ink-subtle">
-        {realLines ? formation! : t.result.lineupApprox}
+        {formation ?? t.result.lineupApprox}
       </p>
     </div>
   );
 }
 
-// Bloque de un equipo: bandera + nombre + badge de estado. Si el XI está
-// confirmado, un toggle revela el esquema de cancha (colapsado por defecto para
-// no meter ruido). Si no, una nota de cuándo se publican las alineaciones.
-// Con el partido ya empezado, el badge "Formación confirmada" se omite (es obvio):
-// queda solo el nombre + "Ver formación".
+// Bloque de un equipo: bandera + nombre + badge de estado + toggle de cancha.
+// Si el XI está confirmado, "Ver formación" revela SinglePitch (colapsado por
+// defecto). Si no, muestra la nota de estado. El badge se oculta tras el KO.
 function TeamLineup({
   flag,
   name,
@@ -401,7 +674,12 @@ function TeamLineup({
       </div>
 
       {hasLineup && open && players && (
-        <LineupPitch players={players} color={color} formation={formation} detail={detail} />
+        <SinglePitch
+          players={players}
+          color={color}
+          formation={formation}
+          detail={detail}
+        />
       )}
     </div>
   );
@@ -778,28 +1056,35 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB }
           {t.result.squadFormation}
         </p>
         <div className="space-y-4">
-          <TeamLineup
-            flag={flag_a}
-            name={team_a_es}
-            confirmed={lineup_confirmed_a}
-            players={lineup_a}
-            color={TEAM_A}
-            pendingNote={lineupPendingNote}
-            started={hasStarted}
-            formation={formation_a}
-            detail={lineup_detail_a}
-          />
-          <TeamLineup
-            flag={flag_b}
-            name={team_b_es}
-            confirmed={lineup_confirmed_b}
-            players={lineup_b}
-            color={TEAM_B}
-            pendingNote={lineupPendingNote}
-            started={hasStarted}
-            formation={formation_b}
-            detail={lineup_detail_b}
-          />
+          {(() => {
+            const { colorA, colorB } = resolveKitColors(flag_a, flag_b);
+            return (
+              <>
+                <TeamLineup
+                  flag={flag_a}
+                  name={team_a_es}
+                  confirmed={lineup_confirmed_a}
+                  players={lineup_a}
+                  color={colorA}
+                  pendingNote={lineupPendingNote}
+                  started={hasStarted}
+                  formation={formation_a}
+                  detail={lineup_detail_a}
+                />
+                <TeamLineup
+                  flag={flag_b}
+                  name={team_b_es}
+                  confirmed={lineup_confirmed_b}
+                  players={lineup_b}
+                  color={colorB}
+                  pendingNote={lineupPendingNote}
+                  started={hasStarted}
+                  formation={formation_b}
+                  detail={lineup_detail_b}
+                />
+              </>
+            );
+          })()}
         </div>
       </div>
 
