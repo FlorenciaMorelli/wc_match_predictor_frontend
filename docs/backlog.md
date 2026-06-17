@@ -24,8 +24,9 @@ integración externa.
 | 7  | Evaluador de accuracy del modelo              | Pendiente    | `feat/model-evaluator`          |
 | 8  | Posiciones correctas según el back            | Pendiente    | `fix/lineup-positions`          |
 | 9  | Curar ausencias contra convocatoria WC2026    | Pendiente    | `fix/key-players-wc2026`        |
+| 10 | Camisetas con diseño real WC2026 (patrón + 2 colores) | Pendiente | `feat/kit-designs-2026`    |
 
-**Olas:** A = ítems 1-4 ✅ completa (`v0.2.0`). B = ítem 5 → release. C = ítem 6 → release. D = ítems 7-9 (análisis y datos) → release.
+**Olas:** A = ítems 1-4 ✅ completa (`v0.2.0`). B = ítem 5 → release. C = ítem 6 → release. D = ítems 7-9 (análisis y datos) → release. E = ítem 10 (camisetas 2026) → release.
 
 Las secciones de abajo guardan el contexto detallado de los ítems pendientes.
 
@@ -187,3 +188,44 @@ funcional desde los 4 sitios, **sin strings de error hardcodeados en `api.ts`** 
 **Criterio:** solo deben listarse jugadores que estén en la convocatoria oficial WC2026 de su selección. Si un jugador está convocado pero no arranca, el chip "ausencias" tiene sentido. Si ni siquiera está convocado, no debe estar en el dataset.
 
 **Done cuando:** `lib/key-players.ts` contiene solo jugadores convocados al WC2026, y el chip de ausencias no reporta falsos positivos por jugadores fuera de squad.
+
+---
+
+## Camisetas con diseño real WC2026 (ítem 10)
+
+**Qué:** hoy la formación (`components/prediction-result.tsx`) dibuja cada camiseta como una silueta SVG de
+**un solo color liso** (`KITS: Record<iso2, {home, away}>`, un hex por kit) más una banda diagonal
+**cosmética** que no representa ningún diseño real. Las camisetas del Mundial 2026 tienen **primario +
+secundario + patrón** (rayas de Argentina, damero de Croacia, banda de Perú, etc.). El objetivo es corregir
+los diseños para que se parezcan a los reales, con
+[footballkitarchive 2026](https://www.footballkitarchive.com/es/world-cup-camisetas-2026-l308/) como
+referencia visual.
+
+**Fuente de datos — decisión:** **dataset curado estático** en `lib/kits.ts` (mismo patrón que
+`lib/key-players.ts`), usando footballkitarchive + el FKApi como **referencia de autoría, una sola vez**.
+
+**Por qué NO se consume el FKApi (`sunr4y-fkapi-12.mintlify.app`) en runtime:** investigado en su fuente
+([sunr4y/fkapi](https://github.com/sunr4y/fkapi)) — es **club-only** (el modelo `Kit` pertenece a un `Club`;
+no hay entidad de selección nacional; se siembra por scraping on-demand), **sin URL pública confirmada** (los
+docs dicen `https://your-domain.com/api/`; es self-host), rate limit **~100 req/h**, y su `main_img_url`
+apunta a **fotos de producto con copyright** de footballkitarchive. No es una dependencia de runtime viable
+para esta app (necesita las 48 selecciones, sin backend extra, sin CORS y robusta offline). Sí expone los
+campos útiles (`primary_color`, `secondary_color[]`, `design`), por eso sirve solo como referencia.
+
+**Render — decisión:** upgrade del `JerseyIcon` a **patrón + 2 colores**. Catálogo de patrones
+(`solid | stripes | sash | hoops | halves | checkers`) dibujados **dentro de la silueta vía `clipPath`** para
+que no se desborden. Se preservan halo de contorno, ribete, puños y dorsal; GK dorado. **Fallback:** una
+selección sin entrada (o sin patrón) cae a primario liso → nunca rompe ni queda en blanco.
+
+**Arquitectura prevista:**
+- `lib/kits.ts` (NUEVO): tipos `KitPattern` / `Kit { primary, secondary, pattern }` / `TeamKits { home, away }`,
+  el `Record` `KITS` enriquecido (48 clasificadas + extras curados, claves ISO2 como hoy, incluido `gb-eng`),
+  `resolveKits(isoA, isoB)` (regla actual: A=home; B=away solo si choca la familia de color primario) y los
+  helpers de color (`hexToRgb`, `isLightColor`, `colorFamily`) movidos desde el componente.
+- `components/prediction-result.tsx`: reescribir `JerseyIcon` para recibir `kit: Kit`; cambiar el threading
+  `color: string` → `kit: Kit` por la cadena `resolveKits → TeamLineup → SinglePitch → PlayerNode →
+  JerseyIcon`; borrar el `KITS`/helpers inline (ahora en `lib/kits.ts`). No toca ninguna API de Next.
+
+**Done cuando:** la formación muestra el diseño real de cada selección (AR rayas celeste/blanco, HR damero,
+ES rojo, etc.) coincidiendo con la referencia 2026, preservando el canje a suplente por choque de color, el
+arquero diferenciado y el fallback robusto; **sin dependencias de runtime ni imágenes con copyright**.
