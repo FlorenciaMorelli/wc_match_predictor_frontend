@@ -29,6 +29,33 @@ guardan el contexto detallado de los ítems que requieren más diseño/decisión
 
 ---
 
+## Tanda 2 — Próximos cambios (jun 2026)
+
+Segunda ronda de cambios. Frontend puro. Se entregan en **4 PRs temáticos por archivo** (varios
+requerimientos comparten archivo, y la CI exige cada rama verde por separado):
+
+| Req | Ítem | Estado | PR / Rama |
+|----|------|--------|------|
+| 3 | Modal: fondo inferior cortado → layout flex (sin `calc` mágico) | ✅ Hecho | `fix/modal-height-clip` |
+| 2 | "0-0" en partidos no jugados → "vs" (gateo por estado iniciado) | ✅ Hecho | `feat/fixture-display` |
+| 7 | Estado en vivo/finalizado reconciliado con la hora de inicio | ✅ Hecho | `feat/fixture-display` |
+| 4 | Ir rápido a los partidos de hoy / próximos (chip + scroll) | ✅ Hecho | `feat/fixture-display` |
+| 6 | Apellidos compuestos cortados en la formación (`displaySurname`) | ✅ Hecho | `feat/lineup-insights` |
+| 5 | Ausencias destacadas: figuras curadas (`lib/key-players.ts`) vs XI | ✅ Hecho | `feat/lineup-insights` |
+
+Los textos i18n nuevos (claves de fixture y de ausencias) viajan en `feat/fixture-display`; `feat/lineup-insights`
+se ramifica de `staging` una vez mergeado ese PR, para que sus usos de las claves de ausencias compilen en CI.
+
+**Pedido a backend (no se resuelve en el front):** frescura del `status` del fixture. La API a veces tarda en
+pasar un partido a `finalizado`/`en juego`. El front mitiga reconciliando con la hora de inicio
+(`effectiveStatus` en `fixture-section.tsx`, ventana ~140′), pero el dato duro de en-vivo/score depende de
+que la API actualice su estado.
+
+> Nota: los **ítems 5 y 6 del roadmap original** (UX de desconexión, TheSportsDB) siguen pendientes y se
+> detallan abajo; no confundir con los "Req 5/6" de esta tanda.
+
+---
+
 ## Análisis de partido finalizado vía TheSportsDB
 
 **Origen:** rediseño "resultado real integrado en el modal" (rama `feat/prediccion-vs-real`). Quedó fuera
