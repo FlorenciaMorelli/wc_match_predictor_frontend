@@ -14,47 +14,49 @@
  *
  * El match es deliberadamente generoso (comparte ≥1 token significativo): preferimos
  * ocultar una ausencia real (falso "presente") antes que reportar una ausencia falsa.
+ *
+ * ÚLTIMA VALIDACIÓN: jun 2026 contra squads oficiales WC2026 (lib/data/squads_wc2026.csv).
+ * Selecciones no clasificadas (it, rs, dk, pl, ng) quitadas del dataset.
+ * Jugadores no convocados removidos: Morata (ES), Griezmann (FR), Foden (ENG),
+ * Rodrygo (BR), Lozano (MEX), Ziyech+En-Nesyri (MA), Elneny (EG),
+ * Haller (CI), Kudus (GHA), Endo+Mitoma (JP), Al-Buraikan (SA).
  */
 
 const KEY_PLAYERS: Record<string, string[]> = {
   // CONMEBOL
   ar: ["Lionel Messi", "Lautaro Martínez", "Julián Álvarez", "Enzo Fernández", "Alexis Mac Allister", "Cristian Romero"],
-  br: ["Vinícius Júnior", "Rodrygo", "Raphinha", "Casemiro", "Marquinhos", "Alisson"],
+  br: ["Vinícius Júnior", "Neymar Jr", "Raphinha", "Casemiro", "Marquinhos", "Alisson"],
   uy: ["Federico Valverde", "Darwin Núñez", "Ronald Araújo", "Rodrigo Bentancur"],
   co: ["James Rodríguez", "Luis Díaz", "Jhon Córdoba"],
   ec: ["Moisés Caicedo", "Enner Valencia", "Pervis Estupiñán"],
   py: ["Miguel Almirón", "Antonio Sanabria"],
-  // UEFA
-  fr: ["Kylian Mbappé", "Antoine Griezmann", "Aurélien Tchouaméni", "Ousmane Dembélé", "William Saliba"],
-  es: ["Rodri", "Pedri", "Gavi", "Lamine Yamal", "Nico Williams", "Álvaro Morata"],
-  "gb-eng": ["Harry Kane", "Jude Bellingham", "Phil Foden", "Bukayo Saka", "Declan Rice"],
+  // UEFA — solo selecciones clasificadas al WC2026
+  // (IT, RS, DK, PL no clasificaron → eliminadas)
+  fr: ["Kylian Mbappé", "Marcus Thuram", "Aurélien Tchouaméni", "Ousmane Dembélé", "William Saliba"],
+  es: ["Rodri", "Pedri", "Gavi", "Lamine Yamal", "Nico Williams"],
+  "gb-eng": ["Harry Kane", "Jude Bellingham", "Bukayo Saka", "Declan Rice", "Marcus Rashford"],
   pt: ["Cristiano Ronaldo", "Bruno Fernandes", "Bernardo Silva", "Rúben Dias", "Vitinha"],
   nl: ["Virgil van Dijk", "Frenkie de Jong", "Memphis Depay", "Cody Gakpo", "Denzel Dumfries"],
   de: ["Jamal Musiala", "Florian Wirtz", "Joshua Kimmich", "Kai Havertz", "Antonio Rüdiger"],
   be: ["Kevin De Bruyne", "Romelu Lukaku", "Jérémy Doku", "Youri Tielemans"],
   hr: ["Luka Modrić", "Mateo Kovačić", "Joško Gvardiol", "Andrej Kramarić"],
-  it: ["Gianluigi Donnarumma", "Federico Chiesa", "Nicolò Barella"],
   ch: ["Granit Xhaka", "Manuel Akanji", "Breel Embolo"],
-  rs: ["Dušan Vlahović", "Sergej Milinković-Savić", "Aleksandar Mitrović"],
-  dk: ["Christian Eriksen", "Rasmus Højlund", "Pierre-Emile Højbjerg"],
-  pl: ["Robert Lewandowski", "Piotr Zieliński", "Nicola Zalewski"],
   // CONCACAF
   us: ["Christian Pulisic", "Weston McKennie", "Tyler Adams", "Gio Reyna"],
-  mx: ["Santiago Giménez", "Edson Álvarez", "Hirving Lozano"],
+  mx: ["Santiago Giménez", "Edson Álvarez", "Raúl Jiménez"],
   ca: ["Alphonso Davies", "Jonathan David"],
-  // CAF
-  ma: ["Achraf Hakimi", "Hakim Ziyech", "Youssef En-Nesyri", "Sofyan Amrabat"],
+  // CAF — solo clasificadas (NG no clasificó → eliminada)
+  ma: ["Achraf Hakimi", "Brahim Díaz", "Sofyan Amrabat", "Bilal El Khannouss"],
   sn: ["Sadio Mané", "Kalidou Koulibaly", "Nicolas Jackson"],
-  eg: ["Mohamed Salah", "Mohamed Elneny"],
-  ng: ["Victor Osimhen", "Ademola Lookman", "Alex Iwobi"],
-  ci: ["Sébastien Haller", "Franck Kessié"],
-  gh: ["Mohammed Kudus", "Thomas Partey"],
+  eg: ["Mohamed Salah", "Omar Marmoush"],
+  ci: ["Amad Diallo", "Franck Kessié", "Seko Fofana"],
+  gh: ["Iñaki Williams", "Thomas Partey", "Antoine Semenyo"],
   // AFC
-  jp: ["Takefusa Kubo", "Wataru Endo", "Kaoru Mitoma", "Daichi Kamada"],
+  jp: ["Takefusa Kubo", "Daichi Kamada", "Ritsu Doan", "Junya Ito"],
   kr: ["Son Heung-Min", "Kim Min-Jae", "Lee Kang-In"],
   au: ["Mathew Ryan", "Jackson Irvine"],
   ir: ["Mehdi Taremi", "Alireza Jahanbakhsh"],
-  sa: ["Salem Al-Dawsari", "Firas Al-Buraikan"],
+  sa: ["Salem Al-Dawsari", "Nasser Al-Dawsari"],
 };
 
 // Partículas que forman parte del apellido (no se cuentan como nombre de pila).
