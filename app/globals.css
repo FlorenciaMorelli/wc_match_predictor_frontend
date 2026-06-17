@@ -231,6 +231,11 @@
 }
 
 /* Modal nativo <dialog> — fade-in micro (DESIGN.md § Motion) */
+/* Clases de Tailwind (display:flex/block) tienen prioridad sobre el UA stylesheet que
+   oculta dialog:not([open]). Esta regla unlayered lo restaura explícitamente. */
+dialog:not([open]) {
+  display: none;
+}
 dialog::backdrop {
   background: rgba(0, 0, 0, 0.5);
 }
