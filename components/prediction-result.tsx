@@ -442,39 +442,130 @@ function PlayerNode({
   );
 }
 
+// ─── Nomenclatura de posiciones del backend ───────────────────────────────────
+// G/GK=portero · RB/LB=lateral D/I · RWB/LWB=carrilero D/I · CD-R/CD-L=central D/I
+// CD/CB=central · SW=líbero · DM=volante defensivo · CM-R/CM-L=central D/I
+// CM/M=mediocampista · RM/LM=volante por banda D/I · AM-R/AM-L=mediapunta D/I
+// AM/OM=enganche · RW/LW=extremo D/I · WF-R/WF-L=variante de extremo
+// CF-R/CF-L=delantero D/I · F/ST=punta · SS=segunda punta
+//
+// Dos mapeos, ambos derivados del CÓDIGO de posición (formation_place del backend
+// viene mezclado entre líneas → no sirve para ordenar):
+//   • attackingDepth: profundidad vertical (atrás→adelante) para ordenar el XI.
+//   • horizontalOrder: izquierda→derecha dentro de una línea.
+// La ESTRUCTURA (cuántas líneas y de qué tamaño) la define el string `formation`.
+
+// attackingDepth — profundidad vertical: 0=arquero … 70=delantero (mayor = más
+// adelantado). Escala ordinal; solo importa el orden relativo. Los carrileros (20)
+// quedan entre centrales (10/12) y volantes (30/40): el corte por tamaños del
+// esquema decide si caen en una defensa de 5 (5-3-2) o en un medio de 5 (3-5-2).
+const ATTACKING_DEPTH: Record<string, number> = {
+  G: 0, GK: 0,
+  CD: 10, CB: 10, "CD-L": 10, "CD-R": 10, "CD-C": 10, SW: 10,
+  LB: 12, RB: 12,
+  LWB: 20, RWB: 20,
+  DM: 30, "DM-L": 30, "DM-R": 30, "DM-C": 30,
+  CM: 40, "CM-L": 40, "CM-R": 40, "CM-C": 40, LM: 40, RM: 40, M: 40,
+  AM: 50, "AM-L": 50, "AM-R": 50, "AM-C": 50, OM: 50, "OM-L": 50, "OM-R": 50,
+  LW: 60, RW: 60, WF: 60, "WF-L": 60, "WF-R": 60,
+  SS: 62,
+  CF: 70, "CF-L": 70, "CF-R": 70, "CF-C": 70, ST: 70, F: 70, FW: 70,
+};
+
+function attackingDepth(pos: string | null): number {
+  if (!pos) return 40;
+  return ATTACKING_DEPTH[pos.toUpperCase().trim()] ?? 40;
+}
+
+function isGk(pos: string | null): boolean {
+  if (!pos) return false;
+  const p = pos.toUpperCase().trim();
+  return p === "G" || p === "GK";
+}
+
+// horizontalOrder — izquierda→derecha dentro de la línea, por regla prefijo/sufijo
+// (robusta a códigos no listados). En Inglaterra 4-2-3-1, formation_place invertiría
+// James(RB) y O'Reilly(LB); el código de posición es la fuente canónica.
+//   prefijo L (LB/LWB/LM/LW) = flanco izq → 1   · sufijo -L = interior izq → 2
+//   prefijo R (RB/RWB/RM/RW) = flanco der → 5   · sufijo -R = interior der → 4
+//   central (CD/CM/DM/AM/ST/F/SW…)                                          → 3
+function horizontalOrder(pos: string | null): number {
+  if (!pos) return 3;
+  const p = pos.toUpperCase().trim();
+  if (p.startsWith("L")) return 1;
+  if (p.startsWith("R")) return 5;
+  if (p.endsWith("-L")) return 2;
+  if (p.endsWith("-R")) return 4;
+  return 3;
+}
+
+// parseFormation — string del esquema → tamaños de línea (atrás→adelante).
+// "3-5-2" → [3,5,2]. null si no parsea o no suma 10 (jugadores de campo, sin GK).
+function parseFormation(formation: string | null | undefined): number[] | null {
+  if (!formation) return null;
+  const parts = formation
+    .split(/[^0-9]+/)
+    .filter(Boolean)
+    .map(Number);
+  if (parts.length < 2) return null;
+  if (parts.some((n) => !Number.isInteger(n) || n < 1 || n > 5)) return null;
+  if (parts.reduce((a, b) => a + b, 0) !== 10) return null;
+  return parts;
+}
+
 // ─── computeFormationLines ────────────────────────────────────────────────────
-// Convierte plantel + datos de formación en líneas de renderizado.
 // Retorna [FWD, ..., GK] (de adelante hacia atrás).
-// Para Team A (mitad inferior): usar tal cual (FWD cerca del centro).
-// Para Team B (mitad superior): invertir antes de renderizar (GK arriba).
 function computeFormationLines(
   players: string[],
   formation: string | null | undefined,
   detail: PlayerSlot[] | null | undefined,
 ): RenderLine[] {
-  if (formation && detail && detail.length === 11) {
-    const nums = formation.split("-").map(Number);
-    if (
-      nums.length >= 2 &&
-      !nums.some((n) => !Number.isInteger(n) || n < 1) &&
-      nums.reduce((a, b) => a + b, 0) === 10
-    ) {
-      const lineSizes = [1, ...nums];
-      const sorted = [...detail].sort(
-        (a, b) => (a.formation_place ?? 99) - (b.formation_place ?? 99),
-      );
-      let cursor = 0;
-      const lines: RenderLine[] = lineSizes.map((size) => {
-        const slots = sorted.slice(cursor, cursor + size);
-        cursor += size;
-        return {
-          names: slots.map((s) => s.name),
-          jerseys: slots.map((s) => s.jersey),
-          positions: slots.map((s) => s.position),
-        };
-      });
-      return [...lines].reverse(); // [FWD, ..., GK]
+  if (detail && detail.length === 11) {
+    const toLine = (slots: PlayerSlot[]): RenderLine => ({
+      names: slots.map((s) => s.name),
+      jerseys: slots.map((s) => s.jersey),
+      positions: slots.map((s) => s.position),
+    });
+
+    const gk = detail.filter((s) => isGk(s.position));
+    const outfield = detail.filter((s) => !isGk(s.position));
+    const sizes = parseFormation(formation);
+
+    // Camino canónico: el string de formación define las líneas; ordenamos por
+    // profundidad y cortamos por esos tamaños; cada línea se ordena izq→derecha.
+    if (gk.length === 1 && sizes && sizes.reduce((a, b) => a + b, 0) === outfield.length) {
+      const ordered = outfield
+        .map((s, i) => ({ s, i }))
+        .sort((a, b) => attackingDepth(a.s.position) - attackingDepth(b.s.position) || a.i - b.i)
+        .map((x) => x.s);
+
+      const lines: RenderLine[] = [toLine(gk)]; // [GK, DEF, …, FWD]
+      let k = 0;
+      for (const size of sizes) {
+        const band = ordered
+          .slice(k, k + size)
+          .map((s, i) => ({ s, i }))
+          .sort((a, b) => horizontalOrder(a.s.position) - horizontalOrder(b.s.position) || a.i - b.i)
+          .map((x) => x.s);
+        lines.push(toLine(band));
+        k += size;
+      }
+      return lines.reverse(); // → [FWD, …, GK]
     }
+
+    // Fallback (sin formación válida): bandas gruesas por profundidad.
+    const bands: PlayerSlot[][] = [[], [], [], []]; // GK · DEF · MID · FWD
+    for (const s of detail) {
+      const d = attackingDepth(s.position);
+      bands[d === 0 ? 0 : d < 30 ? 1 : d < 60 ? 2 : 3].push(s);
+    }
+    bands.forEach((b) =>
+      b.sort((a, c) => horizontalOrder(a.position) - horizontalOrder(c.position)),
+    );
+    return bands
+      .filter((b) => b.length > 0)
+      .map(toLine)
+      .reverse();
   }
 
   if (players.length === 11) {
