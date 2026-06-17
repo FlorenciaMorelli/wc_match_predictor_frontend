@@ -26,7 +26,7 @@ integración externa.
 | 9  | Curar ausencias contra convocatoria WC2026    | Pendiente    | `fix/key-players-wc2026`        |
 | 10 | Camisetas con diseño real WC2026 (patrón + 2 colores) | Pendiente | `feat/kit-designs-2026`    |
 
-**Olas:** A = ítems 1-4 ✅ completa (`v0.2.0`). B = ítem 5 → release. C = ítem 6 → release. D = ítems 7-9 (análisis y datos) → release. E = ítem 10 (camisetas 2026) → release.
+**Olas:** A = ítems 1-4 ✅ completa (`v0.2.0`). **Re-priorizado jun 2026 (torneo en curso):** B = ítem 9 (`v0.2.1`) → C = ítem 8 (`v0.2.2`) → D = ítem 6 (`v0.3.0`) → E = ítem 5 (`v0.4.0`) → F = ítem 10 (`v0.5.0`) → G = ítem 7 (`v0.6.0`). Ver sección "Plan de ejecución" abajo.
 
 Las secciones de abajo guardan el contexto detallado de los ítems pendientes.
 
@@ -171,11 +171,41 @@ funcional desde los 4 sitios, **sin strings de error hardcodeados en `api.ts`** 
 
 ## Posiciones correctas según el back (ítem 8)
 
-**Qué:** el front agrupa el XI en líneas GK/DEF/MID/FWD según el campo de posición que llega del backend (`lineup_detail_a/b`). Actualmente el mapeo puede no reflejar lo que la API realmente envía.
+**Qué:** el front agrupa el XI en líneas GK/DEF/MID/FWD según el campo de posición que llega del backend
+(`lineup_detail_a/b`). El slice actual por `formation_place` no refleja correctamente las líneas de la
+formación.
 
-**Bloqueado por:** necesitamos ver un ejemplo real de la respuesta de `/api/fixture` con XI confirmado, específicamente los campos `lineup_detail_*` y/o `squad_desc_*`, para entender el formato de posición (¿string libre? ¿código? ¿número? ¿orden dentro de un array?).
+**DESBLOQUEADO** — Formato real analizado con Portugal (4-2-3-1) vs Congo RD (5-3-2) de `/api/predict`
+(17-jun-2026):
 
-**Acción pendiente:** el usuario comparte un ejemplo de respuesta del back → se define el mapeo correcto → `fix/lineup-positions`.
+- **`position`:** string code — `"G"`, `"RB"`, `"LB"`, `"CD"`, `"CD-R"`, `"CD-L"`, `"CM"`, `"CM-R"`,
+  `"CM-L"`, `"AM"`, `"AM-R"`, `"AM-L"`, `"LM"`, `"RM"`, `"F"`, `"CF-L"`, `"CF-R"`, etc.
+- **`formation_place`:** entero 1–11. **No es contiguo por línea**: Vitinha (LM, place=4) aparece entre
+  los defensas de Portugal (places 2–6); Bakambu (CF-L, place=9) aparece entre los mediocampistas de
+  Congo RD (places 7–9). Por lo tanto, slicear el array ordenado por `formation_place` con los tamaños
+  de la cadena de formación produce mezclas de roles.
+
+**Bug actual:** `computeFormationLines()` hace `lineSizes = [1, ...nums_from_formation]` y slice el array
+ordenado por `formation_place`. Como `formation_place` no es contiguo por línea, el slice mezcla
+defensas con mediocampistas.
+
+**Fix:** reemplazar el slice por **agrupación en 5 tiers por código de posición**:
+
+| Tier | Nombre | Regex/códigos |
+|------|--------|---------------|
+| 0 | GK | `"G"`, `"GK"` |
+| 1 | DEF | `RB`, `LB`, `CD*`, `CB*`, `RWB`, `LWB`, `SW` |
+| 2 | DMMID | `CM*`, `DM*`, `LM`, `RM`, `WM` (centros y laterales medios) |
+| 3 | AMMID | `AM*`, `OM*` (mediapuntas/enganche) |
+| 4 | FWD | `F`, `CF*`, `ST*`, `LW`, `RW`, `SS*`, `WF*` |
+
+Tiers vacíos se omiten. `formation_place` solo para ordenar L→R dentro de cada línea.
+
+**Validación con datos reales:**
+- Portugal (4-2-3-1): GK×1 · DEF×4 (RB+LB+CD-R+CD-L) · DMMID×2 (LM+RM) · AMMID×3 (AM-R+AM+AM-L) · FWD×1 (F) ✅
+- Congo RD (5-3-2): GK×1 · DEF×5 (RB+LB+CD-L+CD+CD-R) · DMMID×3 (CM-R+CM+CM-L) · FWD×2 (CF-L+CF-R) ✅
+
+**Done cuando:** cada jugador aparece en la línea dictada por su código de posición real, sin mezcla de roles.
 
 ---
 
@@ -229,3 +259,91 @@ selección sin entrada (o sin patrón) cae a primario liso → nunca rompe ni qu
 **Done cuando:** la formación muestra el diseño real de cada selección (AR rayas celeste/blanco, HR damero,
 ES rojo, etc.) coincidiendo con la referencia 2026, preservando el canje a suplente por choque de color, el
 arquero diferenciado y el fallback robusto; **sin dependencias de runtime ni imágenes con copyright**.
+
+---
+
+## Plan de ejecución (re-priorización PM — jun 2026, torneo en curso)
+
+**Principio rector:** el Mundial 2026 está en curso (11 jun–19 jul). Se priorizan correcciones con datos
+ya firmes (convocatorias cerradas, XI visibles) y features *time-boxed* cuyo valor caduca el 19-jul; el
+*polish* evergreen se difiere.
+
+### Prioridad — Senior Project Manager
+
+| Prio | Ítem | Tag | Razón |
+|------|------|-----|-------|
+| P0 | **#9** Curar ausencias vs convocatoria WC2026 | `v0.2.1` | Convocatorias cerradas → el momento exacto. Chip muestra falsos positivos en vivo. Data-only, sin bloqueo. |
+| P0 | **#8** Posiciones correctas | `v0.2.2` | XI visibles ahora en cada partido. DESBLOQUEADO — formato analizado (ver sección #8). |
+| P1 | **#6** Análisis TheSportsDB | `v0.3.0` | Feature *time-boxed* alta: crónicas reales disponibles desde el 11-jun, ventana cierra el 19-jul. Fallback a `narrative` mitiga riesgo. |
+| P1 | **#5** UX de desconexión | `v0.4.0` | Bug i18n real (errores en español con la app en inglés) + resiliencia. *Evergreen*, sin bloqueo. |
+| P2 | **#10** Camisetas 2026 | `v0.5.0` | *Polish* visual. *Evergreen*, alcance acotado. |
+| P2 | **#7** Evaluador de accuracy | `v0.6.0` | Ruta oculta `/eval`. Reutiliza plomería de #6. Puede correr post-torneo. |
+
+**Trade-off explícito:** #6 > #5 por ventana del torneo. Invertible si se prefiere corregir el bug i18n
+real antes de agregar dependencia externa. `package.json` (`0.1.0`) se sincroniza a `0.2.0` en el primer
+commit de ola B.
+
+### Versionado — Senior DevOps
+
+| Ola | Ítem | Tipo SemVer | Tag |
+|-----|------|-------------|-----|
+| sync | `package.json` `0.1.0` → `0.2.0` | infra | — |
+| B | #9 ausencias | `fix` | `v0.2.1` |
+| C | #8 posiciones | `fix` | `v0.2.2` |
+| D | #6 TheSportsDB | `feat` | `v0.3.0` |
+| E | #5 desconexión UX | `feat` + `fix` i18n | `v0.4.0` |
+| F | #10 camisetas | `feat` | `v0.5.0` |
+| G | #7 evaluador | `feat` | `v0.6.0` |
+
+Flujo (igual al actual): cada ola = rama → PR → `staging`; al cerrar, `staging → main --ff-only + tag`.
+Comandos los corre el usuario (Git Bash).
+
+### Análisis por ítem — Functional Analyst · UX/Writer · Frontend Dev
+
+**#9 — Curar ausencias (`fix/key-players-wc2026` · `v0.2.1`)**
+- **FA:** RF: `lib/key-players.ts` solo contiene jugadores convocados al WC2026. RNF: data-only, sin render.
+  **Aceptación:** chip no reporta selecciones no clasificadas (`it`/`rs`/`dk`/`pl`/`ng` eliminadas); no
+  reporta jugadores fuera de squad (Morata fuera de `es`). Selección sin entrada → sin chip.
+- **UX/Writer:** sin cambios de copy.
+- **Dev:** eliminar entradas `it`, `rs`, `dk`, `pl`, `ng`; quitar `"Álvaro Morata"` de `es`. Fuente:
+  squads oficiales FIFA WC2026 verificados (ESPN / FIFA.com, jun 2026).
+
+**#8 — Posiciones correctas (`fix/lineup-positions` · `v0.2.2`)**
+- Ver sección "Posiciones correctas según el back" arriba para formato del backend y validación.
+- **FA:** RF: cada jugador del XI en la línea de su código de posición real. **Aceptación:** Portugal
+  (4-2-3-1) → DEF×4, DMMID×2, AMMID×3, FWD×1 sin mezcla de roles.
+- **UX/Writer:** sin cambios de copy.
+- **Dev:** agregar `positionTier()` (5-tier regex); en `computeFormationLines()`, reemplazar el bloque
+  `formation+detail` con agrupación por tier. `formation_place` pasa a ser solo orden L→R dentro de línea.
+
+**#6 — Análisis TheSportsDB (`feat/match-analysis-thesportsdb` · `v0.3.0`)**
+- **FA:** RF: en finalizados, "Análisis" muestra crónica real. RNF: fallback robusto a `narrative`; sin
+  API keys en cliente; no bloquea el modal. **Aceptación:** cobertura → crónica; sin cobertura/falla →
+  narrativa, modal intacto.
+- **UX/Writer:** carga no bloqueante; i18n ("Goles", "Fuente: TheSportsDB") es/en.
+- **Dev:** `app/api/match-analysis/route.ts` (NUEVO, espejo de `app/api/translate/route.ts`); `prediction-result.tsx`
+  consume vía `useEffect` en finalizados. **Leer `node_modules/next/dist/docs/` (AGENTS.md).**
+
+**#5 — UX de desconexión (`feat/connection-error-ux` · `v0.4.0`)**
+- **FA:** RF: `ApiError` por causa (`offline|waking|slow|server`) + `<ConnectionError>` reusable + reintento
+  en 4 sitios. RNF: sin strings hardcodeados; `role="alert"`. **Aceptación:** app en inglés → error
+  localizado por causa con reintento en todos los sitios.
+- **UX/Writer:** 4 causas, íconos lucide, copy sereno (sin códigos HTTP); bloque `errors` en es/en.
+- **Dev:** `ApiError extends Error` en `lib/api.ts`; `components/connection-error.tsx` (NUEVO); cablear
+  `FixtureSection`, `MatchCard`, `PredictorSection` (predict + teams).
+
+**#10 — Camisetas 2026 (`feat/kit-designs-2026` · `v0.5.0`)**
+- Ver sección "Camisetas con diseño real WC2026" arriba para el contexto completo.
+- **FA:** RF: primario + secundario + patrón; canje a suplente; GK dorado; fallback liso; cobertura 48.
+  **Aceptación:** AR rayas / HR damero; cruce de rojos → B suplente; sin entrada → liso sin error.
+- **UX/Writer:** 6 patrones SVG vía `clipPath`; sin copy nuevo.
+- **Dev:** `lib/kits.ts` (NUEVO); reescribir `JerseyIcon` (threading `color→kit`); eliminar `KITS`/helpers
+  inline. No toca API de Next.
+
+**#7 — Evaluador de accuracy (`feat/model-evaluator` · `v0.6.0`)**
+- **FA:** RF: `/eval` (oculta) con accuracy, Brier score, calibración y desglose por modelo sobre
+  finalizados WC2026. RNF: sin DB; reutiliza normalización de #6. **Aceptación:** métricas con desglose
+  visibles, sin enlace desde la nav.
+- **UX/Writer:** página utilitaria; copy mínimo (puede ser solo-en).
+- **Dev:** `app/eval/page.tsx` + `app/api/eval/route.ts` (NUEVOS, `revalidate`). Después de #6.
+  **Leer docs de Next.**
