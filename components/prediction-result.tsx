@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { MatchStatus, PlayerSlot, PredictResponse, ScoreProbability } from "@/types";
 import FlagImage from "./flag-image";
+import { notableAbsences } from "@/lib/key-players";
 import { useLanguage, teamName } from "@/lib/i18n";
 
 interface Props {
@@ -386,6 +387,25 @@ function JerseyIcon({
   );
 }
 
+// Partículas nobiliarias/de apellido que NO deben quedar separadas del apellido al
+// abreviar (la convención Sofascore/FotMob muestra el apellido solo). Sin esto,
+// "Virgil van Dijk" se mostraba como "Dijk" y "Frenkie de Jong" como "Jong".
+const SURNAME_PARTICLES = new Set([
+  "van", "von", "der", "den", "ter", "ten", "de", "del", "della", "di", "da",
+  "dos", "das", "do", "la", "le", "bin", "ibn", "al", "el", "mac", "mc", "o'",
+]);
+
+// Apellido a mostrar: última palabra + las partículas que la preceden (multi-
+// partícula: "van der", "de la"). Para nombres de una sola palabra (mononímicos),
+// devuelve el nombre completo. En el peor caso muestra de más, nunca corta el apellido.
+function displaySurname(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length <= 1) return name.trim();
+  let i = parts.length - 1;
+  while (i > 0 && SURNAME_PARTICLES.has(parts[i - 1].toLowerCase())) i--;
+  return parts.slice(i).join(" ");
+}
+
 // ─── PlayerNode ───────────────────────────────────────────────────────────────
 // Camiseta + apellido con la fuente display del sitio (Archivo).
 // Convención Sofascore / FotMob: apellido solo, tooltip con nombre completo.
@@ -402,8 +422,7 @@ function PlayerNode({
   position?: string | null;
   isGk?: boolean;
 }) {
-  const parts = name.trim().split(" ");
-  const surname = parts.length > 1 ? parts[parts.length - 1] : name;
+  const surname = displaySurname(name);
 
   return (
     <div
@@ -618,6 +637,8 @@ function TeamLineup({
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const hasLineup = confirmed && players != null && players.length > 0;
+  // Figuras curadas que no aparecen en el XI confirmado. Solo con XI confirmado.
+  const absences = hasLineup && players ? notableAbsences(flag, players) : [];
 
   return (
     <div>
@@ -669,6 +690,16 @@ function TeamLineup({
             <p className="mt-0.5 text-xs leading-5 text-ink-muted">
               {pendingNote}
             </p>
+          )}
+
+          {absences.length > 0 && (
+            <div
+              className="mt-2 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-300/90"
+              title={t.result.absencesNote}
+            >
+              <span className="font-semibold">{t.result.absencesLabel}:</span>
+              <span>{absences.join(", ")}</span>
+            </div>
           )}
         </div>
       </div>
