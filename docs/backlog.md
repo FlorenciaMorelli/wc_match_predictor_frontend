@@ -11,21 +11,23 @@ Plan de entregas progresivas: cada ítem es **una rama → PR → `staging`**; a
 `staging → main --ff-only` + tag SemVer. Orden por prioridad: quick-wins de frontend → infra de UX →
 integración externa.
 
-| #  | Ítem                                          | Estado       | Rama                            |
+| #  | Ítem                                          | Estado       | PR / Rama                       |
 |----|-----------------------------------------------|--------------|---------------------------------|
 | —  | Narrativa: traducción es→en (MyMemory)        | ✅ Hecho      | (ver `app/api/translate/route.ts`) |
 | —  | Sede neutral / localía (i18n en el front)     | ✅ Hecho      | `fix/sede-neutral-i18n` (#15)   |
-| 1  | Logo SVG + título + favicon + OG              | En curso     | `feat/brand-logo`               |
-| 2  | Footer con datos de devs                      | Pendiente    | `feat/footer-credits`           |
-| 3  | Unificar sede card↔modal                      | Pendiente    | `feat/venue-unify`              |
-| 4  | Pulido formación + datos por jugador          | Pendiente    | `feat/lineup-polish`            |
+| 1  | Logo SVG + título + favicon + OG              | ✅ Hecho      | `feat/brand-logo` (#18)         |
+| 2  | Footer con datos de devs                      | ✅ Hecho      | `feat/footer-credits` (#19)     |
+| 3  | Unificar sede card↔modal                      | ✅ Hecho      | `feat/venue-unify` (#20)        |
+| 4  | Pulido formación + datos por jugador          | ✅ Hecho      | `feat/lineup-polish` (#21)      |
 | 5  | UX de desconexión (tarjeta de error)          | Pendiente    | `feat/connection-error-ux`      |
 | 6  | Análisis de partido finalizado (TheSportsDB)  | Pendiente    | `feat/match-analysis-thesportsdb` |
+| 7  | Evaluador de accuracy del modelo              | Pendiente    | `feat/model-evaluator`          |
+| 8  | Posiciones correctas según el back            | Pendiente    | `fix/lineup-positions`          |
+| 9  | Curar ausencias contra convocatoria WC2026    | Pendiente    | `fix/key-players-wc2026`        |
 
-**Olas:** A = ítems 1-4 (frontend puro) → release. B = ítem 5 → release. C = ítem 6 → release.
+**Olas:** A = ítems 1-4 ✅ completa (`v0.2.0`). B = ítem 5 → release. C = ítem 6 → release. D = ítems 7-9 (análisis y datos) → release.
 
-Las features 1-4 son frontend puro y se construyen en esta tanda (no se difieren). Las secciones de abajo
-guardan el contexto detallado de los ítems que requieren más diseño/decisión (5 y 6).
+Las secciones de abajo guardan el contexto detallado de los ítems pendientes.
 
 ---
 
@@ -140,3 +142,48 @@ lenguaje visual del `PhasePlaceholder`:
 
 **Done cuando:** toda desconexión muestra la tarjeta localizada con la causa reconocible + reintento
 funcional desde los 4 sitios, **sin strings de error hardcodeados en `api.ts`** y sin recargar la página.
+
+---
+
+## Evaluador de accuracy del modelo (ítem 7)
+
+**Qué:** ruta oculta `/eval` (no linkeada desde la UI, accesible por URL directa) que muestra el historial de accuracy del modelo contra los resultados reales del WC2026.
+
+**Fuente de datos:**
+- Resultados reales: `/api/fixture` (partidos con `status === "finalizado"` y `score_a`/`score_b` no vacíos).
+- Predicciones: calculadas on-demand llamando al predictor para cada partido finalizado (o cacheadas en un route handler server-side para no saturar el backend).
+
+**Métricas previstas:**
+- **Accuracy de ganador:** % de partidos donde el resultado predicho (ganador con mayor probabilidad) coincidió con el real.
+- **Brier score:** mide la calibración de las probabilidades (qué tan cerca estuvieron de la realidad, no solo si acertó el ganador).
+- **Calibración por rango:** tabla de "cuando el modelo dijo X%, ¿cuántas veces acertó?" (10 buckets de 10%).
+- Desglose por modelo (Dixon-Coles, Bivariate Poisson, Simple Poisson).
+
+**Arquitectura prevista:**
+- `app/eval/page.tsx` (NUEVO): Server Component o `"use client"` con llamada lazy al route handler.
+- `app/api/eval/route.ts` (NUEVO): fetches `/api/fixture`, filtra finalizados, llama al predictor por cada uno, calcula métricas, cachea con `revalidate`.
+- No requiere base de datos: todo se deriva del fixture + el predictor en tiempo de evaluación.
+
+**Done cuando:** `/eval` muestra accuracy, Brier score y calibración de los partidos WC2026 finalizados, con desglose por modelo, sin ser accesible desde la navegación principal.
+
+---
+
+## Posiciones correctas según el back (ítem 8)
+
+**Qué:** el front agrupa el XI en líneas GK/DEF/MID/FWD según el campo de posición que llega del backend (`lineup_detail_a/b`). Actualmente el mapeo puede no reflejar lo que la API realmente envía.
+
+**Bloqueado por:** necesitamos ver un ejemplo real de la respuesta de `/api/fixture` con XI confirmado, específicamente los campos `lineup_detail_*` y/o `squad_desc_*`, para entender el formato de posición (¿string libre? ¿código? ¿número? ¿orden dentro de un array?).
+
+**Acción pendiente:** el usuario comparte un ejemplo de respuesta del back → se define el mapeo correcto → `fix/lineup-positions`.
+
+---
+
+## Curar ausencias contra convocatoria WC2026 (ítem 9)
+
+**Qué:** el dataset en `lib/key-players.ts` tiene figuras curadas históricamente pero no validadas contra las convocatorias reales al WC2026. Jugadores no convocados (por lesión, decisión técnica, suspensión) aparecerían siempre como "ausentes" aunque nunca iban a jugar, lo que hace el chip semánticamente incorrecto.
+
+**Trabajo necesario:** revisar las 20+ selecciones del dataset contra las listas oficiales FIFA WC2026 y remover o reemplazar a quienes no estén convocados. Ejemplos conocidos: Rodrigo Bentancur (UY, suspendido), Nicola Zalewski (PL, no convocado), Sergej Milinković-Savić (RS, retirado de la selección).
+
+**Criterio:** solo deben listarse jugadores que estén en la convocatoria oficial WC2026 de su selección. Si un jugador está convocado pero no arranca, el chip "ausencias" tiene sentido. Si ni siquiera está convocado, no debe estar en el dataset.
+
+**Done cuando:** `lib/key-players.ts` contiene solo jugadores convocados al WC2026, y el chip de ausencias no reporta falsos positivos por jugadores fuera de squad.
