@@ -31,6 +31,7 @@ export type Translations = {
     loadMore: string;
     today: string;
     tomorrow: string;
+    jumpUpcoming: string;
     viewAnalysis: string;
     viewPrediction: string;
     retry: string;
@@ -85,6 +86,8 @@ export type Translations = {
     lineupPendingNote: string;
     lineupUnavailableLive: string;
     lineupUnavailableFinished: string;
+    absencesLabel: string;
+    absencesNote: string;
     lineGk: string;
     lineDef: string;
     lineMid: string;

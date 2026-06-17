@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useId } from "react";
-import type { FixtureMatch, PredictResponse } from "@/types";
+import { useState, useEffect, useId, useRef } from "react";
+import { CalendarDays } from "lucide-react";
+import type { FixtureMatch, MatchStatus, PredictResponse } from "@/types";
 import { fetchFixture, predictMatch } from "@/lib/api";
 import PredictionResult from "./prediction-result";
 import PredictLoader from "./predict-loader";
@@ -16,6 +17,21 @@ const LIVE_STATUSES = new Set([
 ]);
 
 const FINISHED_STATUSES = new Set(["finalizado", "STATUS_FULL_TIME"]);
+
+// Ventana máxima de un partido (90' + entretiempo + descuento + colchón). Pasado
+// esto, un partido que la API todavía marca "en vivo" se considera finalizado: la
+// API a veces tarda en transicionar el estado y, sin esto, la card queda pulsando
+// como en vivo indefinidamente. NO hacemos lo inverso (forzar "en vivo" sobre un
+// `programado`): no se puede distinguir un inicio real de un retraso/postergación.
+const MAX_MATCH_MS = 140 * 60 * 1000;
+
+function effectiveStatus(match: FixtureMatch): MatchStatus {
+  if (LIVE_STATUSES.has(match.status)) {
+    const ko = matchKickoff(match.date, match.time_utc);
+    if (ko && Date.now() > ko.getTime() + MAX_MATCH_MS) return "finalizado";
+  }
+  return match.status;
+}
 
 const STATUS_STYLE: Record<string, string> = {
   "en juego":         "text-emerald-700 bg-emerald-50 dark:text-emerald-300/90 dark:bg-emerald-900/20",
@@ -90,6 +106,36 @@ function defaultSegmentIndex(segments: Segment[]): number {
   return lastDated >= 0 ? Math.min(lastDated + 1, segments.length - 1) : 0;
 }
 
+type JumpTarget = { date: string; segId: string; isToday: boolean };
+
+// R4 — destino del botón "Ir a hoy": fecha (y su segmento/pestaña) a la que saltar.
+// Hoy si tiene partidos; si no, el próximo partido futuro. null si no hay futuro.
+// A nivel módulo (como todayLocalYmd/defaultSegmentIndex) para no llamar funciones
+// impuras (Date.now) directamente en el cuerpo del componente.
+function computeJumpTarget(
+  matches: FixtureMatch[],
+  segments: Segment[],
+): JumpTarget | null {
+  const today = todayLocalYmd();
+  const inToday = (m: FixtureMatch) =>
+    localDateString(m.date, m.time_utc) === today;
+  if (matches.some(inToday)) {
+    const seg = segments.find((s) => s.matches.some(inToday));
+    if (seg) return { date: today, segId: seg.id, isToday: true };
+  }
+  const now = Date.now();
+  let best: { ms: number; date: string; segId: string } | null = null;
+  for (const s of segments) {
+    for (const m of s.matches) {
+      const ms = kickoffMs(m);
+      if (ms >= now && (best === null || ms < best.ms)) {
+        best = { ms, date: localDateString(m.date, m.time_utc), segId: s.id };
+      }
+    }
+  }
+  return best ? { date: best.date, segId: best.segId, isToday: false } : null;
+}
+
 function formatDay(dateStr: string, dateLocale: string): string {
   const [y, m, d] = dateStr.split("-").map(Number);
   return new Date(y, m - 1, d).toLocaleDateString(dateLocale, {
@@ -140,16 +186,25 @@ function MatchCard({ match }: { match: FixtureMatch }) {
   const [error, setError] = useState<string | null>(null);
   const titleId = useId();
 
-  const isLive = LIVE_STATUSES.has(match.status);
-  const statusStyle = STATUS_STYLE[match.status] ?? "text-ink-muted bg-canvas";
-  const statusLabel = t.fixture.status[match.status] ?? match.status;
+  // Estado efectivo: reconcilia el estado de la API con la hora de inicio para que
+  // un partido cuya ventana ya pasó no quede marcado "en vivo". Todo lo de abajo
+  // (anillo, badge, hasStarted, estado al modal) se deriva de `status`, no de `match.status`.
+  const status = effectiveStatus(match);
+  // Cuándo effectiveStatus cambió el estado ("en juego" → "finalizado"), la API
+  // probablemente tampoco actualizó el marcador todavía → no mostrarlo para evitar
+  // la combinación engañosa "Finalizado 0-0". Se confía en el marcador solo cuando
+  // la API lo confirma explícitamente (estado no fue inferido por nosotros).
+  const statusWasInferred = status !== match.status;
+  const isLive = LIVE_STATUSES.has(status);
+  const statusStyle = STATUS_STYLE[status] ?? "text-ink-muted bg-canvas";
+  const statusLabel = t.fixture.status[status] ?? status;
   const roundLabel = match.round
     ? (t.fixture.rounds[match.round.toLowerCase()] ?? match.round)
     : "";
   const localTime = formatLocalTime(match.date, match.time_utc, t.meta.dateLocale);
   const tzName = localTimeZoneName(match.date, t.meta.dateLocale, match.time_utc);
   const utcTooltip = match.time_utc ? `${match.time_utc} ${t.fixture.utcSuffix}` : "";
-  const isFinished = FINISHED_STATUSES.has(match.status);
+  const isFinished = FINISHED_STATUSES.has(status);
   // "Ver análisis" si el partido ya arrancó (en vivo) o terminó; si no, "Ver predicción".
   const hasStarted = isLive || isFinished;
   // Ciudad del estadio (mapa estático de los 16 venues WC2026). null si el backend
@@ -175,7 +230,13 @@ function MatchCard({ match }: { match: FixtureMatch }) {
     ? t.result.venueHome(homeTeamName)
     : null;
 
+  // Solo mostramos marcador si el partido arrancó (en vivo o finalizado) Y la API
+  // lo confirma explícitamente (no lo inferimos nosotros). Los `programado` llegan
+  // con "0"/"0" del backend; si inferimos el estado, el marcador puede ser igual de
+  // obsoleto → "Finalizado 0-0" sería engañoso. Espeja a prediction-result.tsx.
   const hasScore =
+    hasStarted &&
+    !statusWasInferred &&
     match.score_a !== "" &&
     match.score_b !== "" &&
     match.score_a !== "None" &&
@@ -325,9 +386,9 @@ function MatchCard({ match }: { match: FixtureMatch }) {
         {prediction && !loading && (
           <PredictionResult
             result={prediction}
-            matchStatus={match.status}
-            scoreA={match.score_a}
-            scoreB={match.score_b}
+            matchStatus={status}
+            scoreA={statusWasInferred ? "" : match.score_a}
+            scoreB={statusWasInferred ? "" : match.score_b}
           />
         )}
       </Modal>
@@ -355,7 +416,7 @@ function MatchDays({ matches }: { matches: FixtureMatch[] }) {
       {sortedDates.map((date) => {
         const rel = relativeDayKey(date);
         return (
-          <div key={date}>
+          <div key={date} id={`fixture-day-${date}`} className="scroll-mt-24">
             <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold capitalize text-ink-muted">
               {rel && (
                 <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-brand">
@@ -423,6 +484,20 @@ export default function FixtureSection() {
   const [error, setError] = useState<string | null>(null);
   // null = todavía no hubo interacción; se usa la pestaña por defecto (hoy).
   const [activeId, setActiveId] = useState<string | null>(null);
+  // R4 — fecha pendiente de scroll tras cambiar de pestaña. Ref (no state) para no
+  // disparar renders extra ni llamar setState dentro del efecto.
+  const pendingScrollDate = useRef<string | null>(null);
+
+  // R4 — cuando cambia la pestaña activa, si hay una fecha pendiente, scrollear a su
+  // grupo de día (ya renderizado tras el commit) y limpiar la marca.
+  useEffect(() => {
+    const date = pendingScrollDate.current;
+    if (!date) return;
+    pendingScrollDate.current = null;
+    document
+      .getElementById(`fixture-day-${date}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [activeId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -477,6 +552,23 @@ export default function FixtureSection() {
   const activeSeg =
     segments.find((s) => s.id === (activeId ?? defaultId)) ?? segments[0];
 
+  // R4 — destino del botón "Hoy/Próximos" (hoy si tiene partidos; si no, el próximo).
+  const jumpTarget = computeJumpTarget(matches, segments);
+
+  function handleJump() {
+    if (!jumpTarget) return;
+    pendingScrollDate.current = jumpTarget.date;
+    if (activeId === jumpTarget.segId) {
+      // La pestaña ya está activa: el efecto [activeId] no se dispara → scroll directo.
+      pendingScrollDate.current = null;
+      document
+        .getElementById(`fixture-day-${jumpTarget.date}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      setActiveId(jumpTarget.segId);
+    }
+  }
+
   return (
     <section id="fixture" className="mx-auto max-w-7xl px-6 py-20 md:px-12">
       <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-ink-subtle">
@@ -503,6 +595,18 @@ export default function FixtureSection() {
 
       {!loading && !error && activeSeg && (
         <div className="mt-10">
+          {jumpTarget && (
+            <div className="mb-4 flex justify-end">
+              <button
+                type="button"
+                onClick={handleJump}
+                className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm font-semibold text-brand transition-colors hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+              >
+                <CalendarDays size={15} aria-hidden />
+                {jumpTarget.isToday ? t.fixture.today : t.fixture.jumpUpcoming}
+              </button>
+            </div>
+          )}
           {/* Navegación horizontal por fecha/ronda */}
           <div className="-mx-6 overflow-x-auto px-6 md:mx-0 md:px-0">
             <div
