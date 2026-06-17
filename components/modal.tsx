@@ -51,20 +51,24 @@ export default function Modal({ open, onClose, header, children, labelledBy }: P
       onClose={handleClose}
       onClick={handleClick}
       aria-labelledby={labelledBy}
-      className="m-auto w-[min(92vw,42rem)] max-h-[90vh] overflow-hidden rounded-2xl border border-line bg-surface p-0 shadow-xl backdrop:cursor-pointer"
+      className="m-auto max-h-[90vh] w-[min(92vw,42rem)] overflow-hidden rounded-2xl border border-line bg-surface p-0 shadow-xl backdrop:cursor-pointer"
     >
-      <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-line bg-surface/95 px-6 py-4 backdrop-blur-sm">
-        <div className="min-w-0">{header}</div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={t.modal.close}
-          className="shrink-0 rounded-full p-1.5 text-ink-muted transition-colors hover:bg-canvas hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
-        >
-          <X size={18} />
-        </button>
+      {/* Wrapper flex: el <dialog> no debe tener display:flex porque aplasta el
+          dialog:not([open]){display:none} del UA stylesheet del navegador. */}
+      <div className="flex max-h-[90vh] flex-col">
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-line bg-surface/95 px-6 py-4 backdrop-blur-sm">
+          <div className="min-w-0">{header}</div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t.modal.close}
+            className="shrink-0 rounded-full p-1.5 text-ink-muted transition-colors hover:bg-canvas hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-6">{children}</div>
       </div>
-      <div className="max-h-[calc(90vh-4rem)] overflow-y-auto p-6">{children}</div>
     </dialog>
   );
 }
