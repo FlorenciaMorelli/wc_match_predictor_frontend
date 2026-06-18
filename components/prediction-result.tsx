@@ -1,11 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import type { MatchStatus, PlayerSlot, PredictResponse, ScoreProbability } from "@/types";
 import FlagImage from "./flag-image";
 import { notableAbsences } from "@/lib/key-players";
 import { buildMatchReport, type ReportGoal } from "@/lib/match-report";
 import { countryCode } from "@/lib/country-codes";
+import {
+  resolveKits,
+  designationFor,
+  isLightColor,
+  type Kit,
+  type KitPattern,
+} from "@/lib/kits";
 import { useLanguage, teamName } from "@/lib/i18n";
 
 interface Props {
@@ -25,164 +32,6 @@ interface Props {
 const TEAM_A = "var(--result-a)";
 const TEAM_B = "var(--result-b)";
 const DRAW   = "var(--result-draw)";
-
-// Equipaciones por ISO2 (flagcdn). home = camiseta titular, away = alternativa.
-// Cuando dos equipos tienen colores similares, team B cambia a away automáticamente.
-const KITS: Record<string, { home: string; away: string }> = {
-  // CONMEBOL
-  ar: { home: "#74ACDF", away: "#FFFFFF" }, // Argentina – celeste / blanca
-  br: { home: "#FABE18", away: "#003082" }, // Brasil – amarilla / azul
-  co: { home: "#FCD116", away: "#003087" }, // Colombia – amarilla / azul
-  ec: { home: "#FFD100", away: "#003087" }, // Ecuador – amarilla / azul
-  uy: { home: "#5EB6E4", away: "#000000" }, // Uruguay – celeste / negra
-  ve: { home: "#CF142B", away: "#FFFFFF" }, // Venezuela – roja / blanca
-  py: { home: "#D52B1E", away: "#FFFFFF" }, // Paraguay – roja / blanca
-  cl: { home: "#D52B1E", away: "#FFFFFF" }, // Chile – roja / blanca
-  pe: { home: "#D52B1E", away: "#FFFFFF" }, // Perú – roja / blanca
-  bo: { home: "#007940", away: "#FFFFFF" }, // Bolivia – verde / blanca
-  // CONCACAF
-  us: { home: "#FFFFFF", away: "#041E42" }, // USA – blanca / azul marino
-  mx: { home: "#006847", away: "#000000" }, // México – verde / negra
-  ca: { home: "#CC0000", away: "#000000" }, // Canadá – roja / negra
-  pa: { home: "#CF142B", away: "#FFFFFF" }, // Panamá – roja / blanca
-  hn: { home: "#0073CF", away: "#FFFFFF" }, // Honduras – azul / blanca
-  cr: { home: "#002B7F", away: "#FFFFFF" }, // Costa Rica – azul / blanca
-  jm: { home: "#FFCD00", away: "#000000" }, // Jamaica – amarilla / negra
-  ht: { home: "#16438F", away: "#FFFFFF" }, // Haití – azul / blanca
-  cw: { home: "#003DA5", away: "#FFFFFF" }, // Curazao – azul / blanca
-  tt: { home: "#DA1A35", away: "#FFFFFF" }, // Trinidad y Tobago – roja / blanca
-  gt: { home: "#4997D0", away: "#FFFFFF" }, // Guatemala – celeste / blanca
-  sv: { home: "#1B3D8F", away: "#FFFFFF" }, // El Salvador – azul / blanca
-  sr: { home: "#007749", away: "#FFFFFF" }, // Surinam – verde / blanca
-  // UEFA
-  de: { home: "#FFFFFF", away: "#000000" }, // Alemania – blanca / negra
-  fr: { home: "#002395", away: "#FFFFFF" }, // Francia – azul / blanca
-  es: { home: "#AA151B", away: "#FFFFFF" }, // España – roja / blanca
-  pt: { home: "#006600", away: "#AA151B" }, // Portugal – verde / roja
-  "gb-eng": { home: "#FFFFFF", away: "#CC0000" }, // Inglaterra – blanca / roja
-  gb: { home: "#FFFFFF", away: "#CC0000" },        // fallback gb
-  nl: { home: "#FF6600", away: "#000000" }, // Países Bajos – naranja / negra
-  it: { home: "#003399", away: "#FFFFFF" }, // Italia – azul / blanca
-  be: { home: "#CC0000", away: "#000000" }, // Bélgica – roja / negra
-  hr: { home: "#CC0000", away: "#003399" }, // Croacia – roja / azul
-  tr: { home: "#CC0000", away: "#FFFFFF" }, // Turquía – roja / blanca
-  ch: { home: "#FF0000", away: "#000000" }, // Suiza – roja / negra
-  at: { home: "#CC0000", away: "#FFFFFF" }, // Austria – roja / blanca
-  rs: { home: "#C6363C", away: "#FFFFFF" }, // Serbia – roja / blanca
-  ua: { home: "#FFD700", away: "#003087" }, // Ucrania – amarilla / azul
-  "gb-sct": { home: "#003399", away: "#CC0000" }, // Escocia – azul / roja
-  pl: { home: "#FFFFFF", away: "#CC0000" }, // Polonia – blanca / roja
-  ro: { home: "#FFD700", away: "#003087" }, // Rumania – amarilla / azul
-  hu: { home: "#CC0000", away: "#FFFFFF" }, // Hungría – roja / blanca
-  cz: { home: "#D7141A", away: "#FFFFFF" }, // Rep. Checa – roja / blanca
-  si: { home: "#003DA5", away: "#FFFFFF" }, // Eslovenia – azul / blanca
-  sk: { home: "#003DA5", away: "#CC0000" }, // Eslovaquia – azul / roja
-  no: { home: "#BA0C2F", away: "#FFFFFF" }, // Noruega – roja / blanca
-  dk: { home: "#C8102E", away: "#FFFFFF" }, // Dinamarca – roja / blanca
-  se: { home: "#FECC00", away: "#005CBF" }, // Suecia – amarilla / azul
-  gr: { home: "#004C98", away: "#FFFFFF" }, // Grecia – azul / blanca
-  "gb-wls": { home: "#C8102E", away: "#00B5A0" }, // Gales – roja / verde
-  ie: { home: "#009A44", away: "#FFFFFF" }, // Irlanda – verde / blanca
-  ba: { home: "#002F6C", away: "#FFFFFF" }, // Bosnia y Herzegovina – azul / blanca
-  is: { home: "#003897", away: "#FFFFFF" }, // Islandia – azul / blanca
-  al: { home: "#E41B17", away: "#000000" }, // Albania – roja / negra
-  // AFC
-  jp: { home: "#003087", away: "#FFFFFF" }, // Japón – azul / blanca
-  kr: { home: "#C00000", away: "#FFFFFF" }, // Corea del Sur – roja / blanca
-  au: { home: "#FFB81C", away: "#00843D" }, // Australia – dorada / verde
-  sa: { home: "#006C35", away: "#FFFFFF" }, // Arabia Saudita – verde / blanca
-  ir: { home: "#FFFFFF", away: "#239F40" }, // Irán – blanca / verde
-  qa: { home: "#8D153A", away: "#FFFFFF" }, // Qatar – granate / blanca
-  jo: { home: "#007A3D", away: "#FFFFFF" }, // Jordania – verde / blanca
-  uz: { home: "#1EB53A", away: "#003087" }, // Uzbekistán – verde / azul
-  iq: { home: "#CC0000", away: "#FFFFFF" }, // Irak – roja / blanca
-  bh: { home: "#CC0000", away: "#FFFFFF" }, // Bahréin – roja / blanca
-  om: { home: "#DB161B", away: "#FFFFFF" }, // Omán – roja / blanca
-  id: { home: "#CC0000", away: "#FFFFFF" }, // Indonesia – roja / blanca
-  cn: { home: "#CC0000", away: "#FFFFFF" }, // China – roja / blanca
-  // CAF
-  cv: { home: "#003082", away: "#FFFFFF" }, // Cabo Verde – azul / blanca
-  ma: { home: "#C1272D", away: "#FFFFFF" }, // Marruecos – roja / blanca
-  sn: { home: "#00853F", away: "#FFFFFF" }, // Senegal – verde / blanca
-  ng: { home: "#008751", away: "#FFFFFF" }, // Nigeria – verde / blanca
-  eg: { home: "#CC0000", away: "#FFFFFF" }, // Egipto – roja / blanca
-  cm: { home: "#007A5E", away: "#FFFFFF" }, // Camerún – verde / blanca
-  ci: { home: "#FF6600", away: "#003087" }, // Costa de Marfil – naranja / azul
-  za: { home: "#007A5E", away: "#FFD700" }, // Sudáfrica – verde / amarilla
-  dz: { home: "#FFFFFF", away: "#006233" }, // Argelia – blanca / verde
-  gh: { home: "#006B3F", away: "#FFFFFF" }, // Ghana – verde / blanca
-  ml: { home: "#009A44", away: "#FFFFFF" }, // Mali – verde / blanca
-  cd: { home: "#007FFF", away: "#FFFFFF" }, // Congo RD – azul / blanca
-  tz: { home: "#1EB53A", away: "#003087" }, // Tanzania – verde / azul
-  ke: { home: "#CC0000", away: "#FFFFFF" }, // Kenia – roja / blanca
-  tn: { home: "#E70013", away: "#FFFFFF" }, // Túnez – roja / blanca
-  ao: { home: "#CE1126", away: "#000000" }, // Angola – roja / negra
-  gn: { home: "#CE1126", away: "#FFFFFF" }, // Guinea – roja / blanca
-  // OFC
-  nz: { home: "#FFFFFF", away: "#2B3A8C" }, // Nueva Zelanda – blanca / azul
-};
-
-// ─── Kit color helpers ────────────────────────────────────────────────────────
-
-function hexToRgb(hex: string): [number, number, number] {
-  const n = parseInt(hex.replace("#", ""), 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}
-
-// Luminancia perceptual (0–255). > 140 = color claro.
-function isLightColor(hex: string): boolean {
-  if (!hex.startsWith("#")) return false;
-  const [r, g, b] = hexToRgb(hex);
-  return 0.299 * r + 0.587 * g + 0.114 * b > 140;
-}
-
-// Familia de color general (rojo, azul, blanca, etc.) a partir del hex. La idea
-// es agrupar por percepción, no por hex exacto: #AA151B y #C1272D son ambos "red".
-// Se usa para detectar choque de camisetas sin importar el tono preciso.
-function colorFamily(hex: string): string {
-  if (!hex.startsWith("#")) return "other";
-  const [r, g, b] = hexToRgb(hex).map((v) => v / 255);
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const l = (max + min) / 2;
-  const d = max - min;
-  // Acromáticos: muy claro → blanca, muy oscuro → negra, gris medio → al más cercano.
-  if (l > 0.82) return "white";
-  if (l < 0.12) return "black";
-  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
-  if (s < 0.15) return l > 0.5 ? "white" : "black";
-  // Cromáticos: bucketizar por matiz (HSL hue).
-  let h = 0;
-  if (max === r) h = ((g - b) / d) % 6;
-  else if (max === g) h = (b - r) / d + 2;
-  else h = (r - g) / d + 4;
-  h = (h * 60 + 360) % 360;
-  if (h < 20 || h >= 345) return "red";
-  if (h < 45) return "orange";
-  if (h < 70) return "yellow";
-  if (h < 170) return "green";
-  if (h < 255) return "blue";
-  if (h < 290) return "purple";
-  return "red"; // magenta/rosa → familia roja
-}
-
-// Camiseta por defecto para países sin kit definido: blanca.
-const DEFAULT_KIT = "#FFFFFF";
-
-// Resuelve qué color usa cada equipo. Regla: team A siempre usa su titular; el
-// "obligado" a la suplente es SIEMPRE team B, y solo si comparte familia de color
-// general con A (ambos rojos, ambos azules, ambos blancos…), sin importar el hex.
-// Si un país no está en KITS, se usa la camiseta blanca por defecto.
-function resolveKitColors(
-  isoA: string,
-  isoB: string,
-): { colorA: string; colorB: string } {
-  const homeA = KITS[isoA]?.home ?? DEFAULT_KIT;
-  const homeB = KITS[isoB]?.home ?? DEFAULT_KIT;
-  const awayB = KITS[isoB]?.away ?? DEFAULT_KIT;
-  const colorB = colorFamily(homeA) === colorFamily(homeB) ? awayB : homeB;
-  return { colorA: homeA, colorB };
-}
 
 function scoreWinnerColor(a: number, b: number): string {
   if (a === b) return DRAW;
@@ -319,28 +168,87 @@ type RenderLine = {
   positions: (string | null)[];
 };
 
+// Silueta de la camiseta. Compartida por el cuerpo (relleno), el contorno (halo) y el
+// clipPath que recorta el patrón: así rayas/damero/banda nunca se desbordan.
+const JERSEY_BODY =
+  "M8,3 Q12,7 16,3 L23,7 L22,13 L18,12 L18,25 L6,25 L6,12 L2,13 L1,7 Z";
+
+// Patrón del kit recortado a la silueta (clipPath). Cubre toda la viewBox: el recorte
+// se encarga de que solo aparezca dentro de la camiseta (mangas incluidas).
+function KitPatternFill({ pattern, color }: { pattern: KitPattern; color: string }) {
+  switch (pattern) {
+    case "stripes": {
+      // Rayas verticales (AR): barras alternas de ~2.4 de ancho.
+      const w = 2.4;
+      const bars = [];
+      for (let x = 0, i = 0; x < 24; x += w, i++) {
+        if (i % 2 === 1)
+          bars.push(<rect key={i} x={x} y={0} width={w} height={28} fill={color} />);
+      }
+      return <>{bars}</>;
+    }
+    case "hoops": {
+      // Franjas horizontales: barras alternas de ~2.6 de alto.
+      const h = 2.6;
+      const bars = [];
+      for (let y = 0, i = 0; y < 28; y += h, i++) {
+        if (i % 2 === 1)
+          bars.push(<rect key={i} x={0} y={y} width={24} height={h} fill={color} />);
+      }
+      return <>{bars}</>;
+    }
+    case "halves":
+      // Mitad derecha del secundario.
+      return <rect x={12} y={0} width={12} height={28} fill={color} />;
+    case "sash":
+      // Banda diagonal (PE): de hombro izquierdo a cadera derecha.
+      return <path d="M0,7 L7,0 L24,17 L17,24 Z" fill={color} />;
+    case "checkers": {
+      // Damero (HR): cuadros de 4×4 en tablero de ajedrez.
+      const s = 4;
+      const squares = [];
+      for (let r = 0, ri = 0; r < 28; r += s, ri++)
+        for (let c = 0, ci = 0; c < 24; c += s, ci++)
+          if ((ri + ci) % 2 === 0)
+            squares.push(
+              <rect key={`${ri}-${ci}`} x={c} y={r} width={s} height={s} fill={color} />,
+            );
+      return <>{squares}</>;
+    }
+    case "solid":
+    default:
+      return null;
+  }
+}
+
 // ─── JerseyIcon ───────────────────────────────────────────────────────────────
-// Silueta SVG de camiseta de fútbol. Tamaño controlado por className.
-// Incluye un reflejo sutil en la manga izquierda para dar sensación de tela.
+// Silueta SVG de camiseta de fútbol con patrón real (primario + secundario). Tamaño
+// controlado por className. El patrón se pinta dentro de la silueta vía clipPath para
+// que no se desborde; el arquero va dorado liso. Fallback: kit liso = primario.
 function JerseyIcon({
-  color,
+  kit,
   number,
   className = "w-7 h-8",
   isGk = false,
+  gkColor,
 }: {
-  color: string;
+  kit: Kit;
   number?: number | null;
   className?: string;
   isGk?: boolean;
+  gkColor?: string;
 }) {
-  // Cuerpo = color REAL del kit (España rojo, Cabo Verde azul, etc.). El contraste
-  // contra el césped lo dan el contorno (halo) + el tag blanco del nombre, no el
-  // cuerpo. Ribete/puños y dorsal se calculan para contrastar con el cuerpo.
-  const lightBody = isGk || isLightColor(color);
-  const bodyColor = isGk ? "var(--gold)" : color;
+  // clipPath con id único por instancia: varias camisetas conviven sin pisarse.
+  const clipId = useId();
+  // Cuerpo = color REAL del kit (España rojo, Cabo Verde azul, etc.). Arquero: color
+  // designado por FIFA si se conoce (gkColor), si no dorado liso. La claridad del cuerpo
+  // (para ribete/halo/dorsal) se decide por el primario (o el color del arquero).
+  const bodyColor = isGk ? gkColor ?? "var(--gold)" : kit.primary;
+  const pattern: KitPattern = isGk ? "solid" : kit.pattern;
+  const lightBody = isGk ? (gkColor ? isLightColor(gkColor) : true) : isLightColor(kit.primary);
   // Ribete del cuello y puños: oscuro sobre cuerpo claro, blanco sobre cuerpo oscuro.
   const trimColor = lightBody ? "#1f2937" : "#ffffff";
-  // Banda tonal sutil para dar textura de tela sin falsear el color del kit.
+  // En kits lisos, banda tonal sutil para dar textura de tela sin falsear el color.
   const sashColor = lightBody ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.15)";
   const numberColor = lightBody ? "#16181d" : "#ffffff";
   // Halo de contorno: el complementario del cuerpo, para despegar del verde.
@@ -354,39 +262,69 @@ function JerseyIcon({
       className={className}
       aria-hidden="true"
     >
-      {/* Cuerpo: cuello en V, hombros y mangas cortas */}
+      <defs>
+        <clipPath id={clipId}>
+          <path d={JERSEY_BODY} />
+        </clipPath>
+      </defs>
+      {/* Cuerpo: color base del kit (cuello en V, hombros y mangas cortas) */}
+      <path d={JERSEY_BODY} fill={bodyColor} />
+      {/* Patrón (rayas/damero/banda) o banda tonal de textura, recortado a la silueta */}
+      <g clipPath={`url(#${clipId})`}>
+        {pattern === "solid" ? (
+          <path d="M6,8 L9.5,8 L18,25 L14.5,25 Z" fill={sashColor} />
+        ) : (
+          <KitPatternFill pattern={pattern} color={kit.secondary} />
+        )}
+      </g>
+      {/* Contorno por encima del patrón: bordes nítidos sobre rayas/damero */}
       <path
-        d="M8,3 Q12,7 16,3 L23,7 L22,13 L18,12 L18,25 L6,25 L6,12 L2,13 L1,7 Z"
-        fill={bodyColor}
+        d={JERSEY_BODY}
+        fill="none"
         stroke={outline}
         strokeWidth="1.1"
         strokeLinejoin="round"
       />
-      {/* Banda diagonal tonal (no altera el color base del kit) */}
-      <path d="M6,8 L9.5,8 L18,25 L14.5,25 Z" fill={sashColor} />
       {/* Ribete del cuello en V */}
       <path d="M8,3 Q12,7 16,3 L15,4.4 Q12,7.7 9,4.4 Z" fill={trimColor} />
       {/* Puños de las mangas */}
       <path d="M1,7 L2,13 L3.5,12.7 L2.6,7.55 Z" fill={trimColor} />
       <path d="M23,7 L22,13 L20.5,12.7 L21.4,7.55 Z" fill={trimColor} />
-      {/* Dorsal */}
+      {/* Dorsal. En kits con patrón, un disco del color primario detrás del número para
+          que SIEMPRE se apoye sobre el primario (contra el que numberColor ya contrasta) y
+          no quede ilegible sobre una franja/cuadro del secundario. Halo con el color del
+          cuerpo (paintOrder=stroke) para reforzar el borde. */}
       {number != null && (
-        <text
-          x="12"
-          y="19"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fontSize={number >= 10 ? "7" : "8.5"}
-          fontWeight="800"
-          fill={numberColor}
-          stroke={bodyColor}
-          strokeWidth="0.5"
-          paintOrder="stroke"
-          fontFamily="system-ui, -apple-system, sans-serif"
-          letterSpacing="-0.4"
-        >
-          {number}
-        </text>
+        <>
+          {pattern !== "solid" && (
+            <ellipse
+              cx="12"
+              cy="18.5"
+              rx="5.6"
+              ry="5.2"
+              fill={bodyColor}
+              stroke={trimColor}
+              strokeWidth="0.4"
+              strokeOpacity="0.45"
+            />
+          )}
+          <text
+            x="12"
+            y="19"
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={number >= 10 ? "7" : "8.5"}
+            fontWeight="800"
+            fill={numberColor}
+            stroke={bodyColor}
+            strokeWidth="0.5"
+            paintOrder="stroke"
+            fontFamily="system-ui, -apple-system, sans-serif"
+            letterSpacing="-0.4"
+          >
+            {number}
+          </text>
+        </>
       )}
     </svg>
   );
@@ -416,16 +354,18 @@ function displaySurname(name: string): string {
 // Convención Sofascore / FotMob: apellido solo, tooltip con nombre completo.
 function PlayerNode({
   name,
-  color,
+  kit,
   jersey,
   position,
   isGk = false,
+  gkColor,
 }: {
   name: string;
-  color: string;
+  kit: Kit;
   jersey?: number | null;
   position?: string | null;
   isGk?: boolean;
+  gkColor?: string;
 }) {
   const surname = displaySurname(name);
 
@@ -435,10 +375,11 @@ function PlayerNode({
       title={position ? `${name} · ${position}` : name}
     >
       <JerseyIcon
-        color={color}
+        kit={kit}
         number={jersey}
         className="h-8 w-7 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] sm:h-9 sm:w-8"
         isGk={isGk}
+        gkColor={gkColor}
       />
       <span className="font-display whitespace-nowrap rounded-[3px] bg-white/90 px-1 py-px text-center text-[0.6rem] font-bold leading-tight tracking-tight text-slate-900 shadow-sm sm:text-[0.68rem]">
         {surname}
@@ -591,12 +532,14 @@ function computeFormationLines(
 // Fondo sin rayas CSS para mantener coherencia con el diseño editorial del sitio.
 function SinglePitch({
   players,
-  color,
+  kit,
+  gkColor,
   formation,
   detail,
 }: {
   players: string[];
-  color: string;
+  kit: Kit;
+  gkColor?: string;
   formation?: string | null;
   detail?: PlayerSlot[] | null;
 }) {
@@ -686,10 +629,11 @@ function SinglePitch({
                     <PlayerNode
                       key={j}
                       name={name}
-                      color={color}
+                      kit={kit}
                       jersey={line.jerseys[j]}
                       position={line.positions[j]}
                       isGk={isGkLine}
+                      gkColor={gkColor}
                     />
                   ))}
                 </div>
@@ -714,7 +658,8 @@ function TeamLineup({
   name,
   confirmed,
   players,
-  color,
+  kit,
+  gkColor,
   pendingNote,
   started,
   formation,
@@ -724,7 +669,8 @@ function TeamLineup({
   name: string;
   confirmed: boolean;
   players: string[] | null;
-  color: string;
+  kit: Kit;
+  gkColor?: string;
   pendingNote: string;
   started: boolean;
   formation?: string | null;
@@ -803,7 +749,8 @@ function TeamLineup({
       {hasLineup && open && players && (
         <SinglePitch
           players={players}
-          color={color}
+          kit={kit}
+          gkColor={gkColor}
           formation={formation}
           detail={detail}
         />
@@ -1352,7 +1299,23 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
         </p>
         <div className="space-y-4">
           {(() => {
-            const { colorA, colorB } = resolveKitColors(flag_a, flag_b);
+            // Local designado por el sorteo (regla FIFA #1): del backend (home_team_id).
+            // Sede neutral o local indeterminado → null (A como local nominal).
+            const localSide: "a" | "b" | null = neutral
+              ? null
+              : home_team_id === team_a_id
+              ? "a"
+              : home_team_id === team_b_id
+              ? "b"
+              : null;
+            // Override oficial por cruce si está cargado (PDF de FIFA); si no, la regla.
+            // El color del arquero viene de la designación; sin dato → dorado (undefined).
+            const designation = designationFor(flag_a, flag_b);
+            const { kitA, kitB } = designation
+              ? { kitA: designation.a.kit, kitB: designation.b.kit }
+              : resolveKits(flag_a, flag_b, localSide);
+            const gkA = designation?.a.gk;
+            const gkB = designation?.b.gk;
             return (
               <>
                 <TeamLineup
@@ -1360,7 +1323,8 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
                   name={team_a_es}
                   confirmed={lineup_confirmed_a}
                   players={lineup_a}
-                  color={colorA}
+                  kit={kitA}
+                  gkColor={gkA}
                   pendingNote={lineupPendingNote}
                   started={hasStarted}
                   formation={formation_a}
@@ -1371,7 +1335,8 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
                   name={team_b_es}
                   confirmed={lineup_confirmed_b}
                   players={lineup_b}
-                  color={colorB}
+                  kit={kitB}
+                  gkColor={gkB}
                   pendingNote={lineupPendingNote}
                   started={hasStarted}
                   formation={formation_b}
