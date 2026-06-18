@@ -190,4 +190,14 @@ export const es: Translations = {
       scoreOutside: "El resultado no estaba entre los 8 más probables",
     },
   },
+  errors: {
+    retry: "Reintentar",
+    offline: { title: "Sin conexión", body: "Revisá tu internet y reintentá." },
+    waking: {
+      title: "Despertando el servidor",
+      body: "Estaba en reposo. Esperá unos segundos y reintentá.",
+    },
+    slow: { title: "Tardó demasiado", body: "El servidor está lento. Reintentá en un momento." },
+    server: { title: "Algo salió mal", body: "Tuvimos un problema. Reintentá." },
+  },
 };
