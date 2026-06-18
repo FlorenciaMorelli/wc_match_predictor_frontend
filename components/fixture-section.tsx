@@ -389,6 +389,7 @@ function MatchCard({ match }: { match: FixtureMatch }) {
             matchStatus={status}
             scoreA={statusWasInferred ? "" : match.score_a}
             scoreB={statusWasInferred ? "" : match.score_b}
+            matchId={match.id}
           />
         )}
       </Modal>
