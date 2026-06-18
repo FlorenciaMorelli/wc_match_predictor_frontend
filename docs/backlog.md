@@ -21,13 +21,13 @@ integración externa.
 | 4  | Pulido formación + datos por jugador          | ✅ Hecho      | `feat/lineup-polish` (#21)      |
 | 5  | UX de desconexión (tarjeta de error)          | ✅ Hecho      | `feat/connection-error-ux`      |
 | 6  | Análisis de partido finalizado (crónica por reglas) | ✅ Hecho | `feat/match-report-rules`       |
-| 7  | Evaluador de accuracy del modelo              | Pendiente    | `feat/model-evaluator`          |
+| 7  | Evaluador de accuracy del modelo              | ✅ Hecho      | `feat/model-evaluator`          |
 | 8  | Posiciones correctas según el back            | ✅ Hecho      | `fix/lineup` (#29, `6fa39d8`)   |
 | 9  | Curar ausencias contra convocatoria WC2026    | Pendiente    | `fix/key-players-wc2026`        |
 | 10 | Camisetas con diseño real WC2026 (patrón + 2 colores) | ✅ Hecho | `feat/kit-designs-2026`    |
 | 11 | Nombre de camiseta real en la formación (`nombre_camiseta` CSV) | ✅ Hecho | `feat/lineup-shirt-names` |
 
-**Olas:** A = ítems 1-4 ✅ completa (`v0.2.0`). **Re-priorizado jun 2026 (torneo en curso):** B = ítem 9 ✅ (`v0.2.1`) → C = ítem 8 ✅ (en `staging`/`main`, PR #29) → D = ítem 6 ✅ (`v0.3.0`) → E = ítem 5 ✅ (`v0.4.0`) → F = ítem 10 ✅ (`v0.5.0`) → G = ítem 11 ✅ (`v0.6.0`) → **H = ítem 7 (`v0.7.0`) ← próximo**. Ver sección "Plan de ejecución" abajo.
+**Olas:** A = ítems 1-4 ✅ completa (`v0.2.0`). **Re-priorizado jun 2026 (torneo en curso):** B = ítem 9 ✅ (`v0.2.1`) → C = ítem 8 ✅ (en `staging`/`main`, PR #29) → D = ítem 6 ✅ (`v0.3.0`) → E = ítem 5 ✅ (`v0.4.0`) → F = ítem 10 ✅ (`v0.5.0`) → G = ítem 11 ✅ (`v0.6.0`) → H = ítem 7 ✅ (`v0.7.0`). **Roadmap 1–11 completo.** Ver sección "Plan de ejecución" abajo.
 
 Las secciones de abajo guardan el contexto detallado de los ítems pendientes.
 
@@ -155,7 +155,23 @@ funcional desde los 4 sitios, **sin strings de error hardcodeados en `api.ts`** 
 
 ---
 
-## Evaluador de accuracy del modelo (ítem 7)
+## Evaluador de accuracy del modelo (ítem 7) — ✅ HECHO (`feat/model-evaluator`, `v0.7.0`)
+
+**Implementado (jun 2026, ampliado por feedback del usuario):** `/eval` pasó de "ruta oculta" a **espacio de
+claridad sobre la herramienta** (accesible pero NO en primer plano: enlace discreto en el footer).
+- `app/eval/page.tsx` (NUEVO, `"use client"`): orquesta los predicts del lado del CLIENTE (no route handler
+  server: el predict tiene cold-start ~150s y el proxy de Next ya está tuneado; un route serverless cortaría
+  por timeout/memoria). Pool de concurrencia 4; caché en `localStorage` por `(modelo, partido, marcador)`
+  (finalizado + predicción = inmutables → no recalcula ni satura el backend). Toggles ES/EN + tema en el header.
+- `lib/model-eval.ts` (NUEVO, puro): `summarize()` → accuracy de ganador, Brier multiclase, marcador exacto
+  y calibración (10 buckets). Testeable, sin React.
+- Secciones (en este orden, para dar claridad): **¿Cómo funciona?** (4 pasos en lenguaje claro: fuerza+forma
+  → goles esperados → 100.000 simulaciones → probabilidades; + los 3 modelos) → **métricas** con selector de
+  modelo → **calibración** (copy llano + ejemplo + barras comparables Predicho vs Observado) → **Límites y uso
+  responsable** (Legal: estimaciones no certezas, informativo/entretenimiento, no promueve apuestas, juego
+  responsable; bloque `role="note"` + línea persistente en el footer, app-wide).
+
+Contexto original del ítem debajo.
 
 **Qué:** ruta oculta `/eval` (no linkeada desde la UI, accesible por URL directa) que muestra el historial de accuracy del modelo contra los resultados reales del WC2026.
 
@@ -174,7 +190,7 @@ funcional desde los 4 sitios, **sin strings de error hardcodeados en `api.ts`** 
 - `app/api/eval/route.ts` (NUEVO): fetches `/api/fixture`, filtra finalizados, llama al predictor por cada uno, calcula métricas, cachea con `revalidate`.
 - No requiere base de datos: todo se deriva del fixture + el predictor en tiempo de evaluación.
 
-**Done cuando:** `/eval` muestra accuracy, Brier score y calibración de los partidos WC2026 finalizados, con desglose por modelo, sin ser accesible desde la navegación principal.
+**Done cuando:** ✅ `/eval` muestra accuracy, Brier score y calibración de los partidos WC2026 finalizados, con desglose por modelo, sin ser accesible desde la navegación principal (enlace discreto en el footer). Suma explicación del modelo y advertencia de uso responsable.
 
 ---
 
@@ -364,7 +380,7 @@ ya firmes (convocatorias cerradas, XI visibles) y features *time-boxed* cuyo val
 | ✅ | **#5** UX de desconexión | `v0.4.0` | Hecho. `ApiError` por causa + `<ConnectionError>` reusable con reintento en los 4 sitios; arregla el bug i18n. |
 | ✅ | **#10** Camisetas 2026 | `v0.5.0` | Hecho. 3 kits/equipo + regla de contraste FIFA + designación oficial por partido (PDF→CSV) + color de arquero. |
 | ✅ | **#11** Nombre de camiseta en formación | `v0.6.0` | Hecho. `nombre_camiseta` oficial vía match por tokens (CSV pre-procesado a `lib/shirt-names-data.ts`); fallback al apellido heurístico. |
-| P2 | **#7** Evaluador de accuracy | `v0.7.0` | Ruta oculta `/eval`. Reutiliza plomería de #6. Puede correr post-torneo. |
+| ✅ | **#7** Evaluador de accuracy | `v0.7.0` | Hecho. `/eval` (enlace discreto): cómo funciona + accuracy/Brier/calibración por modelo + uso responsable. Orquestación client-side con caché en `localStorage`. |
 
 **Trade-off explícito:** #6 > #5 por ventana del torneo. Invertible si se prefiere corregir el bug i18n
 real antes de agregar dependencia externa. `package.json` (`0.1.0`) se sincroniza a `0.2.0` en el primer
@@ -381,7 +397,7 @@ commit de ola B.
 | E | #5 desconexión UX ✅ | `feat` + `fix` i18n | `v0.4.0` (incluye bump `package.json`) |
 | F | #10 camisetas ✅ | `feat` | `v0.5.0` |
 | G | #11 nombre camiseta ✅ | `feat` | `v0.6.0` |
-| H | #7 evaluador | `feat` | `v0.7.0` |
+| H | #7 evaluador ✅ | `feat` | `v0.7.0` |
 
 Flujo (igual al actual): cada ola = rama → PR → `staging`; al cerrar, `staging → main --ff-only + tag`.
 Comandos los corre el usuario (Git Bash).
@@ -443,10 +459,12 @@ Comandos los corre el usuario (Git Bash).
   `lib/shirt-names.ts` (resolver con `significantTokens`, índice memoizado por país); en `PlayerNode` se
   resuelve la etiqueta con fallback, threadeando `iso2` desde `TeamLineup → SinglePitch`. No toca API de Next.
 
-**#7 — Evaluador de accuracy (`feat/model-evaluator` · `v0.7.0`)**
-- **FA:** RF: `/eval` (oculta) con accuracy, Brier score, calibración y desglose por modelo sobre
-  finalizados WC2026. RNF: sin DB; reutiliza normalización de #6. **Aceptación:** métricas con desglose
-  visibles, sin enlace desde la nav.
-- **UX/Writer:** página utilitaria; copy mínimo (puede ser solo-en).
-- **Dev:** `app/eval/page.tsx` + `app/api/eval/route.ts` (NUEVOS, `revalidate`). Después de #6.
-  **Leer docs de Next.**
+**#7 — Evaluador de accuracy (✅ HECHO · `feat/model-evaluator` · `v0.7.0`)**
+- **FA:** RF: `/eval` con accuracy, Brier score, calibración y desglose por modelo sobre finalizados WC2026,
+  + explicación del modelo + advertencia de uso responsable. RNF: sin DB; accesible pero no en primer plano.
+  **Aceptación:** métricas por modelo visibles, enlace solo desde el footer; calibración y límites claros.
+- **UX/Writer:** copy en es/en; calibración explicada con ejemplo + barras Predicho/Observado; "¿Cómo
+  funciona?" en pasos; bloque "Límites y uso responsable" (Legal: estimaciones no certezas, no promueve apuestas).
+- **Dev:** `app/eval/page.tsx` (`"use client"`, orquestación client-side + caché `localStorage`) +
+  `lib/model-eval.ts` (métricas puras). Sin route handler server (cold-start/timeout). Enlace discreto en el
+  footer + línea de uso responsable app-wide. **Docs de Next leídos** (route handlers, caching).

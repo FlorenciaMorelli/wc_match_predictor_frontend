@@ -72,6 +72,42 @@ export type Translations = {
   theme: { toLight: string; toDark: string };
   footer: {
     madeBy: string;
+    modelAccuracy: string;
+    responsibleUse: string;
+  };
+  eval: {
+    title: string;
+    subtitle: string;
+    back: string;
+    how: {
+      title: string;
+      intro: string;
+      steps: string[];
+      models: string;
+    };
+    modelLabel: string;
+    computing: (done: number, total: number) => string;
+    empty: string;
+    metricsTitle: string;
+    metrics: {
+      winner: string;
+      winnerHelp: string;
+      brier: string;
+      brierHelp: string;
+      exact: string;
+      exactHelp: string;
+      matches: string;
+      matchesHelp: string;
+    };
+    calibrationTitle: string;
+    calibrationIntro: string;
+    calibrationExample: string;
+    calBucket: string;
+    calMatches: string;
+    calPredicted: string;
+    calObserved: string;
+    note: string;
+    limits: { title: string; body: string };
   };
   result: {
     draw: string;

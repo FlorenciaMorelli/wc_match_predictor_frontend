@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import Logo from "@/components/logo";
 import { useLanguage } from "@/lib/i18n";
 
@@ -37,6 +38,11 @@ export default function Footer() {
 
   return (
     <footer className="border-t border-line bg-surface">
+      <div className="mx-auto max-w-7xl px-6 pt-6 md:px-12">
+        <p className="text-center text-xs leading-5 text-ink-subtle md:text-left">
+          {t.footer.responsibleUse}
+        </p>
+      </div>
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 md:flex-row md:items-center md:justify-between md:px-12">
         {/* Marca */}
         <div className="flex items-center gap-2.5">
@@ -44,6 +50,13 @@ export default function Footer() {
           <span className="font-display text-sm font-bold tracking-tight text-brand">
             {t.nav.title}
           </span>
+          {/* Acceso discreto al evaluador (no en primer plano) */}
+          <Link
+            href="/eval"
+            className="ml-1 text-xs text-ink-subtle underline-offset-2 transition-colors hover:text-ink-muted hover:underline"
+          >
+            {t.footer.modelAccuracy}
+          </Link>
         </div>
 
         {/* Créditos */}
