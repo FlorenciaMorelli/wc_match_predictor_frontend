@@ -1,15 +1,18 @@
 # Backlog — TODOs diferidos
 
-Ítems pensados pero **no implementados todavía**, con el contexto necesario para retomarlos sin
-perder el razonamiento. Al cerrar uno, moverlo a "Hecho" o borrarlo (queda en el historial git).
+Contexto de cada cambio (el razonamiento detrás), para retomar sin perderlo. Al cerrar un ítem se
+marca "✅ Hecho" con su rama/tag; el detalle queda como registro histórico.
+
+> **Estado (jun 2026): roadmap 1–11 COMPLETO** (`v0.7.0`). Lo que sigue abajo es histórico salvo la
+> sección **"Deuda técnica diferida"** al final, que lista lo único pendiente (mejoras opcionales).
 
 ---
 
 ## Roadmap multi-rol (junio 2026)
 
 Plan de entregas progresivas: cada ítem es **una rama → PR → `staging`**; al cerrar una ola,
-`staging → main --ff-only` + tag SemVer. Orden por prioridad: quick-wins de frontend → infra de UX →
-integración externa.
+`staging → main` (squash-promote) + tag SemVer. Orden por prioridad: quick-wins de frontend → infra
+de UX → integración externa.
 
 | #  | Ítem                                          | Estado       | PR / Rama                       |
 |----|-----------------------------------------------|--------------|---------------------------------|
@@ -23,7 +26,7 @@ integración externa.
 | 6  | Análisis de partido finalizado (crónica por reglas) | ✅ Hecho | `feat/match-report-rules`       |
 | 7  | Evaluador de accuracy del modelo              | ✅ Hecho      | `feat/model-evaluator`          |
 | 8  | Posiciones correctas según el back            | ✅ Hecho      | `fix/lineup` (#29, `6fa39d8`)   |
-| 9  | Curar ausencias contra convocatoria WC2026    | Pendiente    | `fix/key-players-wc2026`        |
+| 9  | Curar ausencias contra convocatoria WC2026    | ✅ Hecho      | `fix/key-players-wc2026` (`v0.2.1`) |
 | 10 | Camisetas con diseño real WC2026 (patrón + 2 colores) | ✅ Hecho | `feat/kit-designs-2026`    |
 | 11 | Nombre de camiseta real en la formación (`nombre_camiseta` CSV) | ✅ Hecho | `feat/lineup-shirt-names` |
 
@@ -468,3 +471,19 @@ Comandos los corre el usuario (Git Bash).
 - **Dev:** `app/eval/page.tsx` (`"use client"`, orquestación client-side + caché `localStorage`) +
   `lib/model-eval.ts` (métricas puras). Sin route handler server (cold-start/timeout). Enlace discreto en el
   footer + línea de uso responsable app-wide. **Docs de Next leídos** (route handlers, caching).
+
+---
+
+## Deuda técnica diferida (opcional)
+
+Lo único pendiente tras cerrar el roadmap 1–11. Son mejoras de mantenibilidad/higiene, sin impacto
+funcional; se difieren con criterio (no hay *pain* actual y evitan churn sobre código estable).
+
+- **Split de `components/prediction-result.tsx` (~1.4k líneas).** Extraer a módulos: camiseta/`JerseyIcon`
+  + render de kits, cancha/formación (`SinglePitch`/`PlayerNode`), lista de goles (`MatchGoals`) y bloque
+  1X2/comparación. Mejora la navegabilidad; riesgo medio (diff grande), por eso se difiere.
+- **Formateo Prettier en CI.** El repo no está 100% alineado con `.prettierrc` (~57 archivos). Adoptarlo
+  implica un reformat masivo: conviene un PR aislado `style/prettier-format` (diff "solo formato") y recién
+  ahí sumar `format:check` al workflow de CI. Hoy el CI corre `lint` + `typecheck` + `build`.
+- **Tests automatizados.** No hay suite. Candidatos de alto valor y bajo costo: unit tests de helpers puros
+  (`lib/model-eval.ts`, `lib/text.ts`, `lib/kits.ts` `resolveKits`/`shirtToKit`).

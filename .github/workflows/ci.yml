@@ -7,6 +7,12 @@ on:
       - main
       - staging
 
+# Cancela corridas previas del mismo ref cuando llega un push nuevo (ahorra minutos
+# y evita checks obsoletos en una rama con varios pushes seguidos).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
