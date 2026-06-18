@@ -95,6 +95,18 @@ export type Translations = {
     probabilitiesAt90: string;
     penaltiesProbability: string;
     analysis: string;
+    summary: {
+      win: (winner: string, loser: string, gf: number, ga: number) => string;
+      draw: (teamA: string, teamB: string, goals: number) => string;
+      blowout: string;
+      narrow: string;
+      highScoring: string;
+      expected: string;
+      surprise: (prob: string) => string;
+    };
+    goalsHeading: string;
+    penaltyTag: string;
+    ownGoalTag: string;
     squadFormation: string;
     mostLikelyResult: string;
     confidenceHigh: string;

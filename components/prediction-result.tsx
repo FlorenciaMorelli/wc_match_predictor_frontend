@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import type { MatchStatus, PlayerSlot, PredictResponse, ScoreProbability } from "@/types";
 import FlagImage from "./flag-image";
 import { notableAbsences } from "@/lib/key-players";
+import { buildMatchReport, type ReportGoal } from "@/lib/match-report";
+import { countryCode } from "@/lib/country-codes";
 import { useLanguage, teamName } from "@/lib/i18n";
 
 interface Props {
@@ -15,6 +17,9 @@ interface Props {
   // predicción vs. resultado en partidos en vivo / finalizados.
   scoreA?: string;
   scoreB?: string;
+  // ID del partido (= id de evento de ESPN, cuando viene del fixture). Habilita la
+  // crónica por reglas vía /api/match-report en partidos finalizados.
+  matchId?: string;
 }
 
 const TEAM_A = "var(--result-a)";
@@ -807,7 +812,85 @@ function TeamLineup({
   );
 }
 
-export default function PredictionResult({ result, matchStatus, scoreA, scoreB }: Props) {
+// ─── MatchGoals ───────────────────────────────────────────────────────────────
+// Detalle de goles por selección (columnas = países). Una línea por goleador, con
+// TODOS sus minutos agrupados y ordenados; cada minuto aclara penal "(P)" o gol en
+// contra "(EC)". Formato: "12' (P), 42' Harry Kane". El autor de un gol en contra
+// aparece en la columna del rival (la selección a la que le sumó el gol).
+function MatchGoals({
+  goals,
+  teamA,
+  teamB,
+  heading,
+  penaltyTag,
+  ownGoalTag,
+}: {
+  goals: ReportGoal[];
+  teamA: string;
+  teamB: string;
+  heading: string;
+  penaltyTag: string;
+  ownGoalTag: string;
+}) {
+  const minuteToken = (g: ReportGoal) => {
+    if (g.minute == null) return "";
+    const tag = g.penalty ? ` (${penaltyTag})` : g.owngoal ? ` (${ownGoalTag})` : "";
+    return `${g.minute}${g.offset ? `+${g.offset}` : ""}'${tag}`;
+  };
+
+  // Líneas de una columna: agrupa por goleador (orden de su primer gol) y une sus
+  // minutos. "31', 45+5' Folarin Balogun".
+  const lines = (side: "a" | "b") => {
+    const sideGoals = goals
+      .filter((g) => g.team === side)
+      .sort((x, y) => (x.minute ?? 0) - (y.minute ?? 0) || (x.offset ?? 0) - (y.offset ?? 0));
+    const order: string[] = [];
+    const byPlayer = new Map<string, ReportGoal[]>();
+    for (const g of sideGoals) {
+      const key = g.name || "—";
+      if (!byPlayer.has(key)) {
+        byPlayer.set(key, []);
+        order.push(key);
+      }
+      byPlayer.get(key)!.push(g);
+    }
+    return order.map((name) => {
+      const minutes = byPlayer
+        .get(name)!
+        .map(minuteToken)
+        .filter(Boolean)
+        .join(", ");
+      return `${minutes} ${name}`.trim();
+    });
+  };
+
+  const cols = [
+    { name: teamA, list: lines("a") },
+    { name: teamB, list: lines("b") },
+  ];
+
+  return (
+    <div className="mt-3 border-t border-line pt-3">
+      <p className="mb-2 text-[0.7rem] font-semibold uppercase tracking-widest text-ink-subtle">{heading}</p>
+      <div className="grid grid-cols-2 gap-4 text-sm text-ink-muted">
+        {cols.map((col, i) => (
+          <div key={i}>
+            <p className="truncate font-semibold text-ink">{col.name}</p>
+            <ul className="mt-1 space-y-0.5">
+              {col.list.length ? (
+                col.list.map((line, j) => <li key={j}>{line}</li>)
+              ) : (
+                <li className="text-ink-subtle">—</li>
+              )}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function PredictionResult({ result, matchStatus, scoreA, scoreB, matchId }: Props) {
   const { t, locale } = useLanguage();
   const {
     team_a,
@@ -900,6 +983,37 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB }
   const isLive = matchStatus != null && LIVE_STATUSES.has(matchStatus);
   const isFinished = matchStatus != null && FINISHED_STATUSES.has(matchStatus);
   const hasStarted = isLive || isFinished;
+
+  // Crónica por reglas en finalizados: trae los datos del partido de ESPN (matcheo
+  // EXACTO por id de evento = id de fixture) vía /api/match-report y arma el texto con
+  // lib/match-report. Patrón puro como la traducción: { key, data } para que un partido
+  // nuevo no muestre datos viejos. Sin cobertura → cae a la síntesis local.
+  const abbrA = countryCode(team_a);
+  const abbrB = countryCode(team_b);
+  type MatchReportData = { ft: [number, number]; ht: [number, number] | null; goals: ReportGoal[] };
+  const [report, setReport] = useState<{ key: string; data: MatchReportData } | null>(null);
+  const reportKey = matchId ?? "";
+  useEffect(() => {
+    if (!isFinished || !matchId) return;
+    let cancelled = false;
+    fetch("/api/match-report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventId: matchId, abbrA, abbrB }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.found || !Array.isArray(data.ft) || data.ft.length !== 2) return;
+        setReport({
+          key: matchId,
+          data: { ft: data.ft, ht: Array.isArray(data.ht) ? data.ht : null, goals: Array.isArray(data.goals) ? data.goals : [] },
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isFinished, matchId, abbrA, abbrB]);
   const actualA = Number.parseInt(scoreA ?? "", 10);
   const actualB = Number.parseInt(scoreB ?? "", 10);
   const hasIntScore = Number.isInteger(actualA) && Number.isInteger(actualB);
@@ -932,6 +1046,55 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB }
     : totalDiff < -0.75
     ? t.result.compare.goalsFewer
     : t.result.compare.goalsAsExpected;
+
+  // Comentario "cómo estuvo el partido" para finalizados, sintetizado de los datos
+  // reales (marcador + xG + probabilidad del modelo): desenlace + carácter (goleada /
+  // por la mínima / muchos goles) + relación con el pronóstico. Se arma en es/en vía
+  // i18n, sin fuentes externas, y reemplaza la narrativa predictiva del backend (que
+  // post-partido lee mal). Sin marcador válido (compare=false) → cae a la narrativa.
+  let matchSummary: string | null = null;
+  if (compare) {
+    const s = t.result.summary;
+    const winner = outcome === "a" ? team_a_es : outcome === "b" ? team_b_es : null;
+    const loser = outcome === "a" ? team_b_es : outcome === "b" ? team_a_es : null;
+    const gf = Math.max(actualA, actualB);
+    const ga = Math.min(actualA, actualB);
+    const total = actualA + actualB;
+    const margin = Math.abs(actualA - actualB);
+
+    const base = winner ? s.win(winner, loser!, gf, ga) : s.draw(team_a_es, team_b_es, actualA);
+    const character =
+      winner && margin >= 3
+        ? s.blowout
+        : winner && margin === 1
+        ? s.narrow
+        : total >= 4
+        ? s.highScoring
+        : "";
+    const expectation = isUpset
+      ? s.surprise(formatPct(actualOutcomeProb))
+      : actualOutcomeProb >= 0.5
+      ? s.expected
+      : "";
+
+    const first = character ? `${base} ${character}` : base;
+    matchSummary = expectation ? `${first}. ${expectation}.` : `${first}.`;
+  }
+
+  // Crónica completa (ESPN + reglas) cuando hay datos del partido; si no, la síntesis
+  // local de arriba; y si tampoco, la narrativa predictiva del backend.
+  const activeReport = report && report.key === reportKey ? report.data : null;
+  const reportText = activeReport
+    ? buildMatchReport(locale, {
+        ft: activeReport.ft,
+        ht: activeReport.ht,
+        goals: activeReport.goals,
+        teamA: team_a_es,
+        teamB: team_b_es,
+        outcomeProb: actualOutcomeProb,
+        isUpset,
+      })
+    : null;
 
   // El "resultado más probable" debe respetar el marcador más probable:
   // si el top scoreline es un empate (p. ej. 0–0), el titular es Empate,
@@ -1170,7 +1333,17 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB }
         <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-ink-subtle">
           {t.result.analysis}
         </p>
-        <p className="text-sm leading-7 text-ink-muted">{narrativeDisplay}</p>
+        <p className="text-sm leading-7 text-ink-muted">{reportText ?? matchSummary ?? narrativeDisplay}</p>
+        {activeReport && activeReport.goals.length > 0 && (
+          <MatchGoals
+            goals={activeReport.goals}
+            teamA={team_a_es}
+            teamB={team_b_es}
+            heading={t.result.goalsHeading}
+            penaltyTag={t.result.penaltyTag}
+            ownGoalTag={t.result.ownGoalTag}
+          />
+        )}
       </div>
 
       <div className="rounded-xl border border-line px-5 py-4">
