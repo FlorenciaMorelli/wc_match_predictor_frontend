@@ -6,6 +6,7 @@ import FlagImage from "./flag-image";
 import { notableAbsences } from "@/lib/key-players";
 import { buildMatchReport, type ReportGoal } from "@/lib/match-report";
 import { countryCode } from "@/lib/country-codes";
+import { shirtName } from "@/lib/shirt-names";
 import {
   resolveKits,
   designationFor,
@@ -354,6 +355,7 @@ function displaySurname(name: string): string {
 // Convención Sofascore / FotMob: apellido solo, tooltip con nombre completo.
 function PlayerNode({
   name,
+  iso2,
   kit,
   jersey,
   position,
@@ -361,13 +363,15 @@ function PlayerNode({
   gkColor,
 }: {
   name: string;
+  iso2: string;
   kit: Kit;
   jersey?: number | null;
   position?: string | null;
   isGk?: boolean;
   gkColor?: string;
 }) {
-  const surname = displaySurname(name);
+  // Etiqueta: nombre de camiseta oficial WC2026 si hay match; si no, el apellido heurístico.
+  const surname = shirtName(iso2, name) ?? displaySurname(name);
 
   return (
     <div
@@ -532,12 +536,14 @@ function computeFormationLines(
 // Fondo sin rayas CSS para mantener coherencia con el diseño editorial del sitio.
 function SinglePitch({
   players,
+  iso2,
   kit,
   gkColor,
   formation,
   detail,
 }: {
   players: string[];
+  iso2: string;
   kit: Kit;
   gkColor?: string;
   formation?: string | null;
@@ -629,6 +635,7 @@ function SinglePitch({
                     <PlayerNode
                       key={j}
                       name={name}
+                      iso2={iso2}
                       kit={kit}
                       jersey={line.jerseys[j]}
                       position={line.positions[j]}
@@ -749,6 +756,7 @@ function TeamLineup({
       {hasLineup && open && players && (
         <SinglePitch
           players={players}
+          iso2={flag}
           kit={kit}
           gkColor={gkColor}
           formation={formation}
