@@ -20,14 +20,14 @@ integración externa.
 | 3  | Unificar sede card↔modal                      | ✅ Hecho      | `feat/venue-unify` (#20)        |
 | 4  | Pulido formación + datos por jugador          | ✅ Hecho      | `feat/lineup-polish` (#21)      |
 | 5  | UX de desconexión (tarjeta de error)          | Pendiente    | `feat/connection-error-ux`      |
-| 6  | Análisis de partido finalizado (TheSportsDB)  | Pendiente    | `feat/match-analysis-thesportsdb` |
+| 6  | Análisis de partido finalizado (crónica por reglas) | ✅ Hecho | `feat/match-report-rules`       |
 | 7  | Evaluador de accuracy del modelo              | Pendiente    | `feat/model-evaluator`          |
-| 8  | Posiciones correctas según el back            | Pendiente    | `fix/lineup-positions`          |
+| 8  | Posiciones correctas según el back            | ✅ Hecho      | `fix/lineup` (#29, `6fa39d8`)   |
 | 9  | Curar ausencias contra convocatoria WC2026    | Pendiente    | `fix/key-players-wc2026`        |
 | 10 | Camisetas con diseño real WC2026 (patrón + 2 colores) | Pendiente | `feat/kit-designs-2026`    |
 | 11 | Nombre de camiseta real en la formación (`nombre_camiseta` CSV) | Pendiente | `feat/lineup-shirt-names` |
 
-**Olas:** A = ítems 1-4 ✅ completa (`v0.2.0`). **Re-priorizado jun 2026 (torneo en curso):** B = ítem 9 (`v0.2.1`) → C = ítem 8 (`v0.2.2`) → D = ítem 6 (`v0.3.0`) → E = ítem 5 (`v0.4.0`) → F = ítem 10 (`v0.5.0`) → G = ítem 11 (`v0.6.0`) → H = ítem 7 (`v0.7.0`). Ver sección "Plan de ejecución" abajo.
+**Olas:** A = ítems 1-4 ✅ completa (`v0.2.0`). **Re-priorizado jun 2026 (torneo en curso):** B = ítem 9 ✅ (`v0.2.1`) → C = ítem 8 ✅ (en `staging`/`main`, PR #29) → D = ítem 6 ✅ (`v0.3.0`) → **E = ítem 5 (`v0.4.0`) ← próximo** → F = ítem 10 (`v0.5.0`) → G = ítem 11 (`v0.6.0`) → H = ítem 7 (`v0.7.0`). Ver sección "Plan de ejecución" abajo.
 
 Las secciones de abajo guardan el contexto detallado de los ítems pendientes.
 
@@ -55,43 +55,51 @@ pasar un partido a `finalizado`/`en juego`. El front mitiga reconciliando con la
 (`effectiveStatus` en `fixture-section.tsx`, ventana ~140′), pero el dato duro de en-vivo/score depende de
 que la API actualice su estado.
 
-> Nota: los **ítems 5 y 6 del roadmap original** (UX de desconexión, TheSportsDB) siguen pendientes y se
-> detallan abajo; no confundir con los "Req 5/6" de esta tanda.
+> Nota: el **ítem 5 del roadmap original** (UX de desconexión) sigue pendiente y se detalla abajo; no
+> confundir con los "Req 5/6" de esta tanda. (El ítem 6 ya está ✅ Hecho.)
 
 ---
 
-## Análisis de partido finalizado vía TheSportsDB
+## Análisis de partido finalizado — crónica por reglas ✅ HECHO (`feat/match-report-rules`)
 
-**Origen:** rediseño "resultado real integrado en el modal" (rama `feat/prediccion-vs-real`). Quedó fuera
-de alcance de ese branch por tamaño.
+**Origen:** rediseño "resultado real integrado en el modal". En finalizados, la sección **"Análisis"**
+mostraba `narrative` (texto del backend, de tono **predictivo**), que post-partido lee mal.
 
-**Decisión (jun 2026):** usar **TheSportsDB** (gratis, **sin API key**) vía route handler de Next (espejo
-de `app/api/translate/route.ts`), para **no** sumar trabajo al backend de Juan (sobrecargado). **Rama:**
-`feat/match-analysis-thesportsdb`.
+**Camino descartado — TheSportsDB:** se evaluó en vivo y **no sirvió**: su `strDescriptionEN` es
+enciclopédico (estadio/árbitro, no cómo se jugó) y **sin cobertura de fase de grupos** (en WC2022, partidos
+de grupos sin descripción o ausentes). Las APIs de datos (API-Football, etc.) dan stats, no prosa; las de
+noticias dan prosa real pero con copyright (solo excerpt+link) y matching difuso.
 
-**Qué:** hoy la sección **"Análisis"** del modal muestra `narrative` (texto que arma el backend, de tono
-predictivo). En partidos **finalizados** se reemplaza/complementa por una **crónica real**
-(goleadores/eventos) traída de TheSportsDB, para que el texto refleje lo que pasó y no solo la predicción
-previa.
+**Decisión final (jun 2026):** **traer datos estáticos** + **generar el texto por reglas** (sin LLM, sin
+key, sin costo), con tono mundialista y apreciación más humana.
 
-**Arquitectura prevista:**
-- `app/api/match-analysis/route.ts` (NUEVO): recibe equipos + fecha (o score), llama a TheSportsDB
-  server-side (free key `3`/`123`, p. ej. `searchevents`/`eventsday`), **normaliza** la respuesta a un
-  shape chico `{ home, away, scorers/events }` y cachea en memoria. Matchea por **fecha + equipos** para
-  no traer el evento equivocado.
-- `prediction-result.tsx`: si `matchStatus` es finalizado, `useEffect` que llama a `/api/match-analysis`;
-  render de la crónica en la sección "Análisis", **con fallback robusto a `narrative`** si la API falla,
-  no matchea o no hay cobertura. No-finalizados: se mantiene la narrativa predictiva actual.
-- i18n: rótulos de crónica ("Goles", "Fuente: TheSportsDB") en es/en.
+**Fuente de datos — decisión.** Se evaluó openfootball (sin key) pero su matching por nombre fallaba en
+muchas selecciones (South Korea/Korea Republic, Czechia/Czech Republic, Côte d'Ivoire/Ivory Coast…) y a
+veces faltaba el minuto. Se cambió a **ESPN** (API pública del scoreboard, **sin API key**): el `id` de
+fixture del backend **ES el id de evento de ESPN**, así que se matchea EXACTO por id (sin nombres), trae el
+minuto siempre, penales y goles en contra, y actualiza en vivo.
 
-**Consideraciones de UX:** estados de carga/error sin bloquear el modal; tono y idioma del producto
-(es-AR / en) — la fuente probablemente venga en inglés, traducir o mostrar datos crudos localizados.
+**Arquitectura (implementada):**
+- `app/api/match-report/route.ts` (NUEVO, espejo de `app/api/translate/route.ts`): llama al `summary` de
+  **ESPN** (`soccer/fifa.world`) por `eventId`, server-side; mapea cada gol a A/B (por abreviatura, fallback
+  local/visitante), parsea minuto + descuento, penal y gol en contra (vía `type.text`), deriva el parcial de
+  los goles ≤45'. Cachea por evento. Ante cualquier falla → `{ found: false }`.
+- `lib/match-report.ts` (NUEVO): generador por **beats** (titular → cómo se dio → lectura del modelo) que
+  detecta goleada / triplete-doblete / remontada (HT≠FT) / gol agónico / apertura / penal / gol en contra /
+  0-0 / batacazo vs. modelo. Variedad por semilla estable por partido. es + en.
+- `lib/country-codes.ts` (NUEVO): código FIFA de 3 letras por selección (derivado de
+  `lib/data/squads_wc2026.csv`), para mapear cada equipo del front a su competidor en ESPN (por abreviatura).
+- `prediction-result.tsx`: en finalizados consume `/api/match-report` (por `matchId`), arma la crónica y,
+  debajo, una **lista de goles por selección** (por goleador: minutos agrupados, penal `(P)` / en contra
+  `(EC)`). Cadena de fallback: **crónica ESPN → síntesis local → `narrative`** del backend.
+- i18n (es/en): `goalsHeading`, `penaltyTag`, `ownGoalTag` + bloque `summary` (síntesis local).
 
-**Riesgo:** cobertura real de WC2026 en TheSportsDB a verificar en implementación → el fallback a
-`narrative` es la red de seguridad (nunca rompe el modal).
+**Riesgo asumido:** depende de que el `id` de fixture sea el de ESPN (verificado: coincide) y de la
+cobertura de ESPN; por eso la cadena de fallback nunca deja el modal sin texto.
 
-**Done cuando:** en finalizados, "Análisis" muestra contenido derivado del partido real con fallback
-robusto a `narrative`, sin API keys en el cliente y sin romper si el proveedor falla o no cubre el partido.
+**Done cuando:** en finalizados, "Análisis" muestra una crónica derivada del partido real (prosa + goles
+con goleadores/minuto/código de país) con fallback robusto, **sin API keys ni costo** y sin romper si no
+hay cobertura. ✅
 
 ---
 
@@ -170,7 +178,14 @@ funcional desde los 4 sitios, **sin strings de error hardcodeados en `api.ts`** 
 
 ---
 
-## Posiciones correctas según el back (ítem 8)
+## Posiciones correctas según el back (ítem 8) — ✅ HECHO (PR #29, `6fa39d8`)
+
+> **Resuelto** por `fix(lineup): líneas por string de formación + profundidad por código de posición` (#29,
+> ya en `staging`/`main`). La solución tomó una ruta equivalente a la propuesta de tiers: en
+> `computeFormationLines()` la **estructura** de líneas sale del **string de formación** y el **orden** de
+> `attackingDepth(position)` + `horizontalOrder(position)` (ambos por **código** de posición);
+> `formation_place` ya **no** se usa, eliminando la mezcla de roles. Validado con Portugal (4-2-3-1) y
+> Congo RD (5-3-2). Contexto histórico debajo.
 
 **Qué:** el front agrupa el XI en líneas GK/DEF/MID/FWD según el campo de posición que llega del backend
 (`lineup_detail_a/b`). El slice actual por `formation_place` no refleja correctamente las líneas de la
@@ -311,8 +326,8 @@ ya firmes (convocatorias cerradas, XI visibles) y features *time-boxed* cuyo val
 | Prio | Ítem | Tag | Razón |
 |------|------|-----|-------|
 | P0 | **#9** Curar ausencias vs convocatoria WC2026 | `v0.2.1` | Convocatorias cerradas → el momento exacto. Chip muestra falsos positivos en vivo. Data-only, sin bloqueo. |
-| P0 | **#8** Posiciones correctas | `v0.2.2` | XI visibles ahora en cada partido. DESBLOQUEADO — formato analizado (ver sección #8). |
-| P1 | **#6** Análisis TheSportsDB | `v0.3.0` | Feature *time-boxed* alta: crónicas reales disponibles desde el 11-jun, ventana cierra el 19-jul. Fallback a `narrative` mitiga riesgo. |
+| ✅ | **#8** Posiciones correctas | en `staging`/`main` (#29) | XI visibles ahora en cada partido. Resuelto: estructura por string de formación + orden por código de posición. |
+| ✅ | **#6** Análisis (crónica por reglas) | `v0.3.0` | Hecho. Pivot TheSportsDB → ESPN (match exacto por id de evento) + generación por reglas, sin key ni costo. Crónica + lista de goles con minuto/penal/en contra. |
 | P1 | **#5** UX de desconexión | `v0.4.0` | Bug i18n real (errores en español con la app en inglés) + resiliencia. *Evergreen*, sin bloqueo. |
 | P2 | **#10** Camisetas 2026 | `v0.5.0` | *Polish* visual. *Evergreen*, alcance acotado. |
 | P2 | **#11** Nombre de camiseta en formación | `v0.6.0` | *Polish* visual *evergreen*. Agrupado con #10 (mismo componente y dato WC2026). Reusa `squads_wc2026.csv` de #9; sin dep. externa ni backend. |
@@ -328,8 +343,8 @@ commit de ola B.
 |-----|------|-------------|-----|
 | sync | `package.json` `0.1.0` → `0.2.0` | infra | — |
 | B | #9 ausencias | `fix` | `v0.2.1` |
-| C | #8 posiciones | `fix` | `v0.2.2` |
-| D | #6 TheSportsDB | `feat` | `v0.3.0` |
+| C | #8 posiciones ✅ | `fix` | en `staging`/`main` (#29) |
+| D | #6 crónica por reglas ✅ | `feat` | `v0.3.0` |
 | E | #5 desconexión UX | `feat` + `fix` i18n | `v0.4.0` |
 | F | #10 camisetas | `feat` | `v0.5.0` |
 | G | #11 nombre camiseta | `feat` | `v0.6.0` |
@@ -348,7 +363,7 @@ Comandos los corre el usuario (Git Bash).
 - **Dev:** eliminar entradas `it`, `rs`, `dk`, `pl`, `ng`; quitar `"Álvaro Morata"` de `es`. Fuente:
   squads oficiales FIFA WC2026 verificados (ESPN / FIFA.com, jun 2026).
 
-**#8 — Posiciones correctas (`fix/lineup-positions` · `v0.2.2`)**
+**#8 — Posiciones correctas (✅ HECHO · PR #29 `6fa39d8`, en `staging`/`main`)**
 - Ver sección "Posiciones correctas según el back" arriba para formato del backend y validación.
 - **FA:** RF: cada jugador del XI en la línea de su código de posición real. **Aceptación:** Portugal
   (4-2-3-1) → DEF×4, DMMID×2, AMMID×3, FWD×1 sin mezcla de roles.
@@ -356,13 +371,15 @@ Comandos los corre el usuario (Git Bash).
 - **Dev:** agregar `positionTier()` (5-tier regex); en `computeFormationLines()`, reemplazar el bloque
   `formation+detail` con agrupación por tier. `formation_place` pasa a ser solo orden L→R dentro de línea.
 
-**#6 — Análisis TheSportsDB (`feat/match-analysis-thesportsdb` · `v0.3.0`)**
-- **FA:** RF: en finalizados, "Análisis" muestra crónica real. RNF: fallback robusto a `narrative`; sin
-  API keys en cliente; no bloquea el modal. **Aceptación:** cobertura → crónica; sin cobertura/falla →
-  narrativa, modal intacto.
-- **UX/Writer:** carga no bloqueante; i18n ("Goles", "Fuente: TheSportsDB") es/en.
-- **Dev:** `app/api/match-analysis/route.ts` (NUEVO, espejo de `app/api/translate/route.ts`); `prediction-result.tsx`
-  consume vía `useEffect` en finalizados. **Leer `node_modules/next/dist/docs/` (AGENTS.md).**
+**#6 — Análisis: crónica por reglas (✅ HECHO · `feat/match-report-rules` · `v0.3.0`)**
+- Ver sección "Análisis de partido finalizado — crónica por reglas" arriba para el contexto completo.
+- **FA:** RF: en finalizados, "Análisis" muestra crónica derivada del partido real (prosa + lista de goles
+  con goleador/minuto/código de país, aclarando penal y gol en contra). RNF: sin API keys ni costo;
+  fallback robusto. **Aceptación:** con datos → crónica + goles; sin cobertura → síntesis/narrativa, modal
+  intacto.
+- **UX/Writer:** tono mundialista, apreciación humana; i18n `goalsHeading`/`penaltyTag`/`ownGoalTag` es/en.
+- **Dev:** `app/api/match-report/route.ts` (ESPN, match por id de evento), `lib/match-report.ts` (generador),
+  `lib/country-codes.ts` (código FIFA del CSV), `prediction-result.tsx` (consumo + lista de goles).
 
 **#5 — UX de desconexión (`feat/connection-error-ux` · `v0.4.0`)**
 - **FA:** RF: `ApiError` por causa (`offline|waking|slow|server`) + `<ConnectionError>` reusable + reintento
