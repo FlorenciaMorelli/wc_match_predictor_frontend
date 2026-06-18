@@ -24,10 +24,10 @@ integración externa.
 | 7  | Evaluador de accuracy del modelo              | Pendiente    | `feat/model-evaluator`          |
 | 8  | Posiciones correctas según el back            | ✅ Hecho      | `fix/lineup` (#29, `6fa39d8`)   |
 | 9  | Curar ausencias contra convocatoria WC2026    | Pendiente    | `fix/key-players-wc2026`        |
-| 10 | Camisetas con diseño real WC2026 (patrón + 2 colores) | Pendiente | `feat/kit-designs-2026`    |
+| 10 | Camisetas con diseño real WC2026 (patrón + 2 colores) | ✅ Hecho | `feat/kit-designs-2026`    |
 | 11 | Nombre de camiseta real en la formación (`nombre_camiseta` CSV) | Pendiente | `feat/lineup-shirt-names` |
 
-**Olas:** A = ítems 1-4 ✅ completa (`v0.2.0`). **Re-priorizado jun 2026 (torneo en curso):** B = ítem 9 ✅ (`v0.2.1`) → C = ítem 8 ✅ (en `staging`/`main`, PR #29) → D = ítem 6 ✅ (`v0.3.0`) → E = ítem 5 ✅ (`v0.4.0`) → **F = ítem 10 (`v0.5.0`) ← próximo** → G = ítem 11 (`v0.6.0`) → H = ítem 7 (`v0.7.0`). Ver sección "Plan de ejecución" abajo.
+**Olas:** A = ítems 1-4 ✅ completa (`v0.2.0`). **Re-priorizado jun 2026 (torneo en curso):** B = ítem 9 ✅ (`v0.2.1`) → C = ítem 8 ✅ (en `staging`/`main`, PR #29) → D = ítem 6 ✅ (`v0.3.0`) → E = ítem 5 ✅ (`v0.4.0`) → F = ítem 10 ✅ (`v0.5.0`) → **G = ítem 11 (`v0.6.0`) ← próximo** → H = ítem 7 (`v0.7.0`). Ver sección "Plan de ejecución" abajo.
 
 Las secciones de abajo guardan el contexto detallado de los ítems pendientes.
 
@@ -237,7 +237,25 @@ Tiers vacíos se omiten. `formation_place` solo para ordenar L→R dentro de cad
 
 ---
 
-## Camisetas con diseño real WC2026 (ítem 10)
+## Camisetas con diseño real WC2026 (ítem 10) — ✅ HECHO (`feat/kit-designs-2026`, `v0.5.0`)
+
+**Implementado (jun 2026, supera el alcance original):** se hizo en `lib/kits.ts` (NUEVO) + reescritura de
+`JerseyIcon`. Cambios clave respecto del plan inicial, por feedback del usuario:
+- **3 kits por selección** (`home`/`away`/`third`), no 2, como la designación oficial de FIFA.
+- **6 patrones** (`solid|stripes|hoops|halves|sash|checkers`) dibujados con `clipPath` (no se desbordan).
+  Patronadas reales: AR rayas, HR damero, US franjas, PE banda; el resto liso.
+- **Regla de asignación FIFA** (`resolveKits`): el LOCAL designado por sorteo (del backend, `home_team_id`,
+  no "team A" fijo) usa su titular; el visitante baja a alternativa → tercera solo si choca por familia de
+  color o falta contraste claro/oscuro. Aplica a todo cruce (fixture, predictor, eliminatorias).
+- **Designación oficial por partido** (`MATCH_COLOURS` + `designationFor`): los 72 cruces de fase de grupos
+  con el color real de camiseta + arquero de cada selección, transcripto del PDF oficial de FIFA
+  (`lib/data/fwc2026_match_colours.csv`, referencia — no se consume en runtime). Cuando hay designación,
+  MANDA sobre la regla; arquero con su color real (gold de fallback si el dato falta). El PDF da colores,
+  no slots: se mapean a kit (con patrón para AR/HR/US) vía `shirtToKit`.
+- **Legibilidad del dorsal:** en kits con patrón, disco del color primario detrás del número para que
+  siempre se apoye sobre el primario (contra el que el número ya contrasta).
+
+Contexto original del ítem debajo.
 
 **Qué:** hoy la formación (`components/prediction-result.tsx`) dibuja cada camiseta como una silueta SVG de
 **un solo color liso** (`KITS: Record<iso2, {home, away}>`, un hex por kit) más una banda diagonal
@@ -272,7 +290,7 @@ selección sin entrada (o sin patrón) cae a primario liso → nunca rompe ni qu
   `color: string` → `kit: Kit` por la cadena `resolveKits → TeamLineup → SinglePitch → PlayerNode →
   JerseyIcon`; borrar el `KITS`/helpers inline (ahora en `lib/kits.ts`). No toca ninguna API de Next.
 
-**Done cuando:** la formación muestra el diseño real de cada selección (AR rayas celeste/blanco, HR damero,
+**Done cuando:** ✅ la formación muestra el diseño real de cada selección (AR rayas celeste/blanco, HR damero,
 ES rojo, etc.) coincidiendo con la referencia 2026, preservando el canje a suplente por choque de color, el
 arquero diferenciado y el fallback robusto; **sin dependencias de runtime ni imágenes con copyright**.
 
@@ -329,7 +347,7 @@ ya firmes (convocatorias cerradas, XI visibles) y features *time-boxed* cuyo val
 | ✅ | **#8** Posiciones correctas | en `staging`/`main` (#29) | XI visibles ahora en cada partido. Resuelto: estructura por string de formación + orden por código de posición. |
 | ✅ | **#6** Análisis (crónica por reglas) | `v0.3.0` | Hecho. Pivot TheSportsDB → ESPN (match exacto por id de evento) + generación por reglas, sin key ni costo. Crónica + lista de goles con minuto/penal/en contra. |
 | ✅ | **#5** UX de desconexión | `v0.4.0` | Hecho. `ApiError` por causa + `<ConnectionError>` reusable con reintento en los 4 sitios; arregla el bug i18n. |
-| P2 | **#10** Camisetas 2026 | `v0.5.0` | *Polish* visual. *Evergreen*, alcance acotado. |
+| ✅ | **#10** Camisetas 2026 | `v0.5.0` | Hecho. 3 kits/equipo + regla de contraste FIFA + designación oficial por partido (PDF→CSV) + color de arquero. |
 | P2 | **#11** Nombre de camiseta en formación | `v0.6.0` | *Polish* visual *evergreen*. Agrupado con #10 (mismo componente y dato WC2026). Reusa `squads_wc2026.csv` de #9; sin dep. externa ni backend. |
 | P2 | **#7** Evaluador de accuracy | `v0.7.0` | Ruta oculta `/eval`. Reutiliza plomería de #6. Puede correr post-torneo. |
 
@@ -346,7 +364,7 @@ commit de ola B.
 | C | #8 posiciones ✅ | `fix` | en `staging`/`main` (#29) |
 | D | #6 crónica por reglas ✅ | `feat` | `v0.3.0` |
 | E | #5 desconexión UX ✅ | `feat` + `fix` i18n | `v0.4.0` (incluye bump `package.json`) |
-| F | #10 camisetas | `feat` | `v0.5.0` |
+| F | #10 camisetas ✅ | `feat` | `v0.5.0` |
 | G | #11 nombre camiseta | `feat` | `v0.6.0` |
 | H | #7 evaluador | `feat` | `v0.7.0` |
 
@@ -389,13 +407,16 @@ Comandos los corre el usuario (Git Bash).
 - **Dev:** `ApiError extends Error` en `lib/api.ts`; `components/connection-error.tsx` (NUEVO); cablear
   `FixtureSection`, `MatchCard`, `PredictorSection` (predict + teams).
 
-**#10 — Camisetas 2026 (`feat/kit-designs-2026` · `v0.5.0`)**
-- Ver sección "Camisetas con diseño real WC2026" arriba para el contexto completo.
-- **FA:** RF: primario + secundario + patrón; canje a suplente; GK dorado; fallback liso; cobertura 48.
-  **Aceptación:** AR rayas / HR damero; cruce de rojos → B suplente; sin entrada → liso sin error.
-- **UX/Writer:** 6 patrones SVG vía `clipPath`; sin copy nuevo.
-- **Dev:** `lib/kits.ts` (NUEVO); reescribir `JerseyIcon` (threading `color→kit`); eliminar `KITS`/helpers
-  inline. No toca API de Next.
+**#10 — Camisetas 2026 (✅ HECHO · `feat/kit-designs-2026` · `v0.5.0`)**
+- Ver sección "Camisetas con diseño real WC2026" arriba para el detalle de lo implementado.
+- **FA:** RF: 3 kits/equipo + patrón; regla de contraste FIFA (local designado = titular; visitante baja a
+  alternativa/tercera si choca); designación oficial por partido (72 cruces) con color de arquero; fallback
+  liso/dorado; cobertura 48. **Aceptación:** AR rayas / HR damero; designación FIFA cargada manda sobre la
+  regla; sin entrada → regla de contraste; sin kit → liso sin error.
+- **UX/Writer:** 6 patrones SVG vía `clipPath`; disco de respaldo del dorsal en kits con patrón; sin copy nuevo.
+- **Dev:** `lib/kits.ts` (NUEVO: KITS de 3 kits, `resolveKits`, `MATCH_COLOURS`/`designationFor`,
+  `shirtToKit`, paleta de color del PDF); `lib/data/fwc2026_match_colours.csv` (referencia); reescritura de
+  `JerseyIcon` (threading `kit` + `gkColor`). No toca API de Next.
 
 **#11 — Nombre de camiseta real en la formación (`feat/lineup-shirt-names` · `v0.6.0`)**
 - Ver sección "Nombre de camiseta real en la formación" arriba para el formato del CSV y el matching.
