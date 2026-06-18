@@ -19,7 +19,7 @@ integración externa.
 | 2  | Footer con datos de devs                      | ✅ Hecho      | `feat/footer-credits` (#19)     |
 | 3  | Unificar sede card↔modal                      | ✅ Hecho      | `feat/venue-unify` (#20)        |
 | 4  | Pulido formación + datos por jugador          | ✅ Hecho      | `feat/lineup-polish` (#21)      |
-| 5  | UX de desconexión (tarjeta de error)          | Pendiente    | `feat/connection-error-ux`      |
+| 5  | UX de desconexión (tarjeta de error)          | ✅ Hecho      | `feat/connection-error-ux`      |
 | 6  | Análisis de partido finalizado (crónica por reglas) | ✅ Hecho | `feat/match-report-rules`       |
 | 7  | Evaluador de accuracy del modelo              | Pendiente    | `feat/model-evaluator`          |
 | 8  | Posiciones correctas según el back            | ✅ Hecho      | `fix/lineup` (#29, `6fa39d8`)   |
@@ -27,7 +27,7 @@ integración externa.
 | 10 | Camisetas con diseño real WC2026 (patrón + 2 colores) | Pendiente | `feat/kit-designs-2026`    |
 | 11 | Nombre de camiseta real en la formación (`nombre_camiseta` CSV) | Pendiente | `feat/lineup-shirt-names` |
 
-**Olas:** A = ítems 1-4 ✅ completa (`v0.2.0`). **Re-priorizado jun 2026 (torneo en curso):** B = ítem 9 ✅ (`v0.2.1`) → C = ítem 8 ✅ (en `staging`/`main`, PR #29) → D = ítem 6 ✅ (`v0.3.0`) → **E = ítem 5 (`v0.4.0`) ← próximo** → F = ítem 10 (`v0.5.0`) → G = ítem 11 (`v0.6.0`) → H = ítem 7 (`v0.7.0`). Ver sección "Plan de ejecución" abajo.
+**Olas:** A = ítems 1-4 ✅ completa (`v0.2.0`). **Re-priorizado jun 2026 (torneo en curso):** B = ítem 9 ✅ (`v0.2.1`) → C = ítem 8 ✅ (en `staging`/`main`, PR #29) → D = ítem 6 ✅ (`v0.3.0`) → E = ítem 5 ✅ (`v0.4.0`) → **F = ítem 10 (`v0.5.0`) ← próximo** → G = ítem 11 (`v0.6.0`) → H = ítem 7 (`v0.7.0`). Ver sección "Plan de ejecución" abajo.
 
 Las secciones de abajo guardan el contexto detallado de los ítems pendientes.
 
@@ -103,7 +103,7 @@ hay cobertura. ✅
 
 ---
 
-## UX de desconexión con el backend (estados de error reconocibles)
+## UX de desconexión con el backend (estados de error reconocibles) — ✅ HECHO (`feat/connection-error-ux`, `v0.4.0`)
 
 **Origen:** se trabajó la robustez de cold-start en `fix/predict-cold-start` (PR3: pre-flight a
 `/health` + retry en 503 + timeout 240s). Eso mitiga la *carga* lenta reintentando en silencio, pero
@@ -328,7 +328,7 @@ ya firmes (convocatorias cerradas, XI visibles) y features *time-boxed* cuyo val
 | P0 | **#9** Curar ausencias vs convocatoria WC2026 | `v0.2.1` | Convocatorias cerradas → el momento exacto. Chip muestra falsos positivos en vivo. Data-only, sin bloqueo. |
 | ✅ | **#8** Posiciones correctas | en `staging`/`main` (#29) | XI visibles ahora en cada partido. Resuelto: estructura por string de formación + orden por código de posición. |
 | ✅ | **#6** Análisis (crónica por reglas) | `v0.3.0` | Hecho. Pivot TheSportsDB → ESPN (match exacto por id de evento) + generación por reglas, sin key ni costo. Crónica + lista de goles con minuto/penal/en contra. |
-| P1 | **#5** UX de desconexión | `v0.4.0` | Bug i18n real (errores en español con la app en inglés) + resiliencia. *Evergreen*, sin bloqueo. |
+| ✅ | **#5** UX de desconexión | `v0.4.0` | Hecho. `ApiError` por causa + `<ConnectionError>` reusable con reintento en los 4 sitios; arregla el bug i18n. |
 | P2 | **#10** Camisetas 2026 | `v0.5.0` | *Polish* visual. *Evergreen*, alcance acotado. |
 | P2 | **#11** Nombre de camiseta en formación | `v0.6.0` | *Polish* visual *evergreen*. Agrupado con #10 (mismo componente y dato WC2026). Reusa `squads_wc2026.csv` de #9; sin dep. externa ni backend. |
 | P2 | **#7** Evaluador de accuracy | `v0.7.0` | Ruta oculta `/eval`. Reutiliza plomería de #6. Puede correr post-torneo. |
@@ -345,7 +345,7 @@ commit de ola B.
 | B | #9 ausencias | `fix` | `v0.2.1` |
 | C | #8 posiciones ✅ | `fix` | en `staging`/`main` (#29) |
 | D | #6 crónica por reglas ✅ | `feat` | `v0.3.0` |
-| E | #5 desconexión UX | `feat` + `fix` i18n | `v0.4.0` |
+| E | #5 desconexión UX ✅ | `feat` + `fix` i18n | `v0.4.0` (incluye bump `package.json`) |
 | F | #10 camisetas | `feat` | `v0.5.0` |
 | G | #11 nombre camiseta | `feat` | `v0.6.0` |
 | H | #7 evaluador | `feat` | `v0.7.0` |
@@ -381,7 +381,7 @@ Comandos los corre el usuario (Git Bash).
 - **Dev:** `app/api/match-report/route.ts` (ESPN, match por id de evento), `lib/match-report.ts` (generador),
   `lib/country-codes.ts` (código FIFA del CSV), `prediction-result.tsx` (consumo + lista de goles).
 
-**#5 — UX de desconexión (`feat/connection-error-ux` · `v0.4.0`)**
+**#5 — UX de desconexión (✅ HECHO · `feat/connection-error-ux` · `v0.4.0`)**
 - **FA:** RF: `ApiError` por causa (`offline|waking|slow|server`) + `<ConnectionError>` reusable + reintento
   en 4 sitios. RNF: sin strings hardcodeados; `role="alert"`. **Aceptación:** app en inglés → error
   localizado por causa con reintento en todos los sitios.

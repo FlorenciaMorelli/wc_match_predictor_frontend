@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useId, useRef } from "react";
+import { useState, useEffect, useId, useRef, useCallback } from "react";
 import { CalendarDays } from "lucide-react";
 import type { FixtureMatch, MatchStatus, PredictResponse } from "@/types";
-import { fetchFixture, predictMatch } from "@/lib/api";
+import { fetchFixture, predictMatch, toApiError, type ApiError } from "@/lib/api";
 import PredictionResult from "./prediction-result";
 import PredictLoader from "./predict-loader";
+import ConnectionError from "./connection-error";
 import FlagImage from "./flag-image";
 import Modal from "./modal";
 import { useLanguage, teamName } from "@/lib/i18n";
@@ -183,7 +184,7 @@ function MatchCard({ match }: { match: FixtureMatch }) {
   const [prediction, setPrediction] = useState<PredictResponse | null>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ApiError | null>(null);
   const titleId = useId();
 
   // Estado efectivo: reconcilia el estado de la API con la hora de inicio para que
@@ -255,7 +256,7 @@ function MatchCard({ match }: { match: FixtureMatch }) {
       });
       setPrediction(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : t.fixture.errorPredict);
+      setError(toApiError(e));
     } finally {
       setLoading(false);
     }
@@ -370,18 +371,12 @@ function MatchCard({ match }: { match: FixtureMatch }) {
           />
         )}
         {error && (
-          <div className="py-8">
-            <p className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
-              {error}
-            </p>
-            <button
-              type="button"
-              onClick={handleOpen}
-              className="mt-4 rounded-xl border border-line px-5 py-2.5 text-sm font-semibold text-ink-muted transition-colors hover:bg-canvas"
-            >
-              {t.fixture.retry}
-            </button>
-          </div>
+          <ConnectionError
+            kind={error.kind}
+            detail={error.detail}
+            onRetry={handleOpen}
+            className="py-8"
+          />
         )}
         {prediction && !loading && (
           <PredictionResult
@@ -482,7 +477,7 @@ export default function FixtureSection() {
   const { t } = useLanguage();
   const [matches, setMatches] = useState<FixtureMatch[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ApiError | null>(null);
   // null = todavía no hubo interacción; se usa la pestaña por defecto (hoy).
   const [activeId, setActiveId] = useState<string | null>(null);
   // R4 — fecha pendiente de scroll tras cambiar de pestaña. Ref (no state) para no
@@ -500,26 +495,28 @@ export default function FixtureSection() {
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [activeId]);
 
+  // setState solo en los callbacks del promise (no sincrónico): así el efecto que lo
+  // invoca no dispara el lint react-hooks/set-state-in-effect. `loading` arranca true.
+  const runFixture = useCallback(() => {
+    fetchFixture(FIXTURE_DAYS_AHEAD)
+      .then((data) => {
+        setMatches(data);
+        setError(null);
+      })
+      .catch((e) => setError(toApiError(e)))
+      .finally(() => setLoading(false));
+  }, []);
+
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await fetchFixture(FIXTURE_DAYS_AHEAD);
-        if (!cancelled) setMatches(data);
-      } catch (e) {
-        if (!cancelled)
-          setError(e instanceof Error ? e.message : t.fixture.errorLoad);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [t.fixture.errorLoad]);
+    runFixture();
+  }, [runFixture]);
+
+  // Reintento manual (handler de evento): muestra el spinner y relanza la carga.
+  function retryFixture() {
+    setError(null);
+    setLoading(true);
+    runFixture();
+  }
 
   // Segmentos en orden: 3 fechas de grupos + eliminatorias. Los partidos ya
   // jugados quedan dentro de su fecha/ronda (no se descartan).
@@ -589,9 +586,12 @@ export default function FixtureSection() {
       )}
 
       {error && (
-        <p className="mt-8 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
-          {error}
-        </p>
+        <ConnectionError
+          kind={error.kind}
+          detail={error.detail}
+          onRetry={retryFixture}
+          className="mt-8"
+        />
       )}
 
       {!loading && !error && activeSeg && (
