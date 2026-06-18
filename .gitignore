@@ -57,7 +57,6 @@ next-env.d.ts
 # ==========================================================
 # Testing
 # ==========================================================
-coverage/
 .nyc_output/
 
 # Jest
@@ -177,4 +176,3 @@ CLAUDE.md.local
 
 # Local prompts and experiments
 prompts.local/
-node_modules

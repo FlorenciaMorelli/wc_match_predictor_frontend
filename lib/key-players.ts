@@ -22,6 +22,8 @@
  * Haller (CI), Kudus (GHA), Endo+Mitoma (JP), Al-Buraikan (SA).
  */
 
+import { significantTokens } from "./text";
+
 const KEY_PLAYERS: Record<string, string[]> = {
   // CONMEBOL
   ar: ["Lionel Messi", "Lautaro Martínez", "Julián Álvarez", "Enzo Fernández", "Alexis Mac Allister", "Cristian Romero"],
@@ -58,34 +60,6 @@ const KEY_PLAYERS: Record<string, string[]> = {
   ir: ["Mehdi Taremi", "Alireza Jahanbakhsh"],
   sa: ["Salem Al-Dawsari", "Nasser Al-Dawsari"],
 };
-
-// Partículas que forman parte del apellido (no se cuentan como nombre de pila).
-const PARTICLES = new Set([
-  "van", "von", "der", "den", "ter", "ten", "de", "del", "della", "di", "da",
-  "dos", "das", "do", "la", "le", "bin", "ibn", "al", "el", "mac", "mc", "o",
-]);
-
-// Longitud mínima de un token para considerarlo "significativo" (descarta
-// iniciales y partículas cortas que generan coincidencias espurias).
-const MIN_TOKEN_LEN = 4;
-
-function normalize(s: string): string {
-  return s
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "") // saca acentos (marcas combinantes)
-    .toLowerCase()
-    .replace(/[.'-]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function tokens(name: string): string[] {
-  return normalize(name).split(" ").filter(Boolean);
-}
-
-function significantTokens(name: string): string[] {
-  return tokens(name).filter((t) => t.length >= MIN_TOKEN_LEN && !PARTICLES.has(t));
-}
 
 /**
  * Figuras curadas de `iso2` que NO aparecen en el XI confirmado. Devuelve [] si el

@@ -13,31 +13,7 @@
  * evita colisiones entre selecciones; ante varios candidatos gana el de mayor solapamiento.
  */
 import { SHIRT_NAMES } from "./shirt-names-data";
-
-// Partículas de apellido (no cuentan como token discriminante).
-const PARTICLES = new Set([
-  "van", "von", "der", "den", "ter", "ten", "de", "del", "della", "di", "da",
-  "dos", "das", "do", "la", "le", "bin", "ibn", "al", "el", "mac", "mc", "o",
-]);
-
-// Largo mínimo de un token "significativo" (descarta iniciales y partículas cortas).
-const MIN_TOKEN_LEN = 4;
-
-function normalize(s: string): string {
-  return s
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "") // saca acentos (marcas combinantes)
-    .toLowerCase()
-    .replace(/[.'-]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function significantTokens(name: string): string[] {
-  return normalize(name)
-    .split(" ")
-    .filter((t) => t.length >= MIN_TOKEN_LEN && !PARTICLES.has(t));
-}
+import { significantTokens } from "./text";
 
 // Índice por selección: tokens significativos del nombre completo → nombre de camiseta.
 // Se construye una sola vez por ISO2 y se cachea (el XI consulta varias veces por equipo).
