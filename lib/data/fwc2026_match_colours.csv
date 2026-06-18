@@ -1,0 +1,145 @@
+match_no,group,team,shirt,gk
+1,A,Mexico,green,purple
+1,A,South Africa,yellow,light blue / turquoise
+2,A,Korea Republic,red,yellow
+2,A,Czechia,white / bronze,turquoise
+3,B,Canada,red,blue
+3,B,Bosnia and Herzegovina,white,yellow
+4,D,USA,white / red,yellow
+4,D,Paraguay,navy blue,orange
+5,C,Haiti,white,yellow
+5,C,Scotland,red,blue
+6,D,Australia,gold,black
+6,D,Türkiye,port red,blue
+7,C,Brazil,yellow,light grey / black
+7,C,Morocco,red,light blue
+8,B,Qatar,maroon,yellow / black
+8,B,Switzerland,light grey / light green,light blue
+9,E,Côte d'Ivoire,orange / green,turquoise
+9,E,Ecuador,navy blue,olive green
+10,E,Germany,white / black,dark green / white
+10,E,Curaçao,blue,orange
+11,F,Netherlands,orange,green
+11,F,Japan,navy blue / white,UNKNOWN
+12,F,Sweden,yellow / blue,green / black
+12,F,Tunisia,red,turquoise
+13,H,Saudi Arabia,dark green,yellow
+13,H,Uruguay,light blue,orange
+14,H,Spain,red / navy,UNKNOWN
+14,H,Cabo Verde,white,yellow
+15,G,IR Iran,white,light blue
+15,G,New Zealand,black,magenta
+16,G,Belgium,red / yellow,green
+16,G,Egypt,white,light green
+17,I,France,navy blue,yellow / black
+17,I,Senegal,white,orange
+18,I,Iraq,white,yellow
+18,I,Norway,red,light blue
+19,J,Argentina,white / light,UNKNOWN
+19,J,Algeria,dark green,yellow / blue
+20,J,Austria,red / black,light blue
+20,J,Jordan,white,yellow
+21,L,Ghana,yellow,turquoise
+21,L,Panama,red / white,grey
+22,L,England,white / red,UNKNOWN
+22,L,Croatia,blue / navy,UNKNOWN
+23,K,Portugal,port red / olive green,gold
+23,K,Congo DR,blue,light grey
+24,K,Uzbekistan,white,orange
+24,K,Colombia,navy blue / yellow,magenta / light grey
+25,A,Czechia,red / navy,UNKNOWN
+25,A,South Africa,yellow,light blue / turquoise
+26,B,Switzerland,red / white,light blue
+26,B,Bosnia and Herzegovina,white,yellow
+27,B,Canada,black,yellow
+27,B,Qatar,white,dark green / magenta
+28,A,Mexico,black / white,olive green / magenta
+28,A,Korea Republic,magenta,yellow
+29,C,Brazil,navy blue,magenta
+29,C,Haiti,white,yellow
+30,C,Scotland,navy blue,yellow
+30,C,Morocco,white,neon green
+31,D,Türkiye,white / port,UNKNOWN
+31,D,Paraguay,navy blue,orange
+32,D,USA,white / red,blue
+32,D,Australia,gold,purple
+33,E,Germany,white / black,blue / light
+33,E,Côte d'Ivoire,orange / green,yellow
+34,E,Ecuador,yellow / navy,blue
+34,E,Curaçao,blue,light grey / black
+35,F,Netherlands,orange,green
+35,F,Sweden,blue / yellow,light grey / white
+36,F,Tunisia,white,orange
+36,F,Japan,navy blue / white,yellow / black
+37,H,Uruguay,light blue,green
+37,H,Cabo Verde,red,yellow
+38,H,Spain,red / navy,UNKNOWN
+38,H,Saudi Arabia,white / bronze,light blue / black
+39,G,Belgium,red / yellow,green
+39,G,IR Iran,white,light blue
+40,G,New Zealand,white,neon green
+40,G,Egypt,red,green
+41,I,Norway,black,light blue
+41,I,Senegal,white,UNKNOWN
+42,I,France,navy blue,yellow / black
+42,I,Iraq,white,orange
+43,J,Argentina,white / light,UNKNOWN
+43,J,Austria,red / black,yellow
+44,J,Jordan,red,yellow
+44,J,Algeria,white,light blue / turquoise
+45,L,England,white / red,UNKNOWN
+45,L,Ghana,yellow,magenta
+46,L,Panama,navy blue / white,neon green
+46,L,Croatia,white / red,yellow
+47,K,Portugal,port red / olive green,neon green
+47,K,Uzbekistan,white,neon green
+48,K,Colombia,yellow / red,green / dark
+48,K,Congo DR,blue,light grey
+49,C,Scotland,navy blue,grey
+49,C,Brazil,yellow,red / port red
+50,C,Morocco,red,white
+50,C,Haiti,blue,yellow
+51,B,Switzerland,red / white,yellow
+51,B,Canada,white,blue
+52,B,Bosnia and Herzegovina,blue / yellow,orange
+52,B,Qatar,white,yellow / blue
+53,A,Czechia,red / navy,UNKNOWN
+53,A,Mexico,white / dark,green
+54,A,South Africa,yellow,light blue / turquoise
+54,A,Korea Republic,red,green
+55,E,Curaçao,blue,light grey / black
+55,E,Côte d'Ivoire,orange / green,yellow
+56,E,Ecuador,yellow / navy,UNKNOWN
+56,E,Germany,navy blue / turquoise,orange / blue
+57,F,Japan,navy blue / white,UNKNOWN
+57,F,Sweden,yellow / blue,green / black
+58,F,Tunisia,white,turquoise
+58,F,Netherlands,orange,green
+59,D,Türkiye,white / port,UNKNOWN
+59,D,USA,navy blue,yellow
+60,D,Paraguay,red / white,light blue
+60,D,Australia,gold,black
+61,I,Norway,red,light blue
+61,I,France,light green,yellow / black
+62,I,Senegal,white,UNKNOWN
+62,I,Iraq,dark green,black
+63,G,Egypt,red,yellow
+63,G,IR Iran,white,light blue
+64,G,New Zealand,white,neon green
+64,G,Belgium,red / yellow,yellow / black
+65,H,Cabo Verde,navy blue / blue,yellow
+65,H,Saudi Arabia,white / bronze,light blue / black
+66,H,Uruguay,navy blue,orange
+66,H,Spain,white / maroon,yellow / black
+67,L,Panama,white,turquoise
+67,L,England,red / navy,olive green
+68,L,Croatia,white / red,green
+68,L,Ghana,yellow,turquoise
+69,J,Algeria,white,light blue / turquoise
+69,J,Austria,red / black,yellow
+70,J,Jordan,white,yellow
+70,J,Argentina,navy blue,dark green / blue
+71,K,Colombia,yellow / red,light grey / dark grey
+71,K,Portugal,port red / olive green,neon green
+72,K,Congo DR,red,green
+72,K,Uzbekistan,white,grey
