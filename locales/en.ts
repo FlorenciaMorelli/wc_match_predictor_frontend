@@ -124,6 +124,55 @@ export const en: Translations = {
   },
   footer: {
     madeBy: "Built by",
+    modelAccuracy: "About the model",
+    responsibleUse:
+      "Statistical predictions for informational and entertainment purposes. We don't promote betting; if you play, do it responsibly.",
+  },
+  eval: {
+    title: "About the model",
+    subtitle:
+      "How the predictor works, how accurate it has been against the real World Cup 2026 results, and how to read it.",
+    back: "Back",
+    how: {
+      title: "How does it work?",
+      intro:
+        "For each match, the model estimates how many goals each team might score and simulates the match many times to compute the probabilities.",
+      steps: [
+        "Estimates each team's strength from its history, giving more weight to recent form.",
+        "Computes each team's expected goals and adjusts low-scoring matches.",
+        "Simulates the match 100,000 times and counts how often each scoreline happens.",
+        "Those simulations yield the 1X2 probabilities and most likely scorelines; in knockouts it also simulates extra time and penalties.",
+      ],
+      models: "You can compare three approaches:",
+    },
+    modelLabel: "Model",
+    computing: (done, total) => `Evaluating ${done}/${total} matches…`,
+    empty: "No finished matches to evaluate yet.",
+    metricsTitle: "How accurate it has been",
+    metrics: {
+      winner: "Winner accuracy",
+      winnerHelp: "Matches where the most likely outcome (1X2) matched the real one.",
+      brier: "Brier score",
+      brierHelp: "Probability calibration (0 = perfect, lower is better).",
+      exact: "Exact score",
+      exactHelp: "Matches where the most likely scoreline matched the real one.",
+      matches: "Matches evaluated",
+      matchesHelp: "Finished with a score, used in the computation.",
+    },
+    calibrationTitle: "Are the probabilities reliable?",
+    calibrationIntro:
+      "We group all the probabilities the model gave into 10% ranges and, for each range, compare the average it predicted with how often those results actually happened.",
+    calibrationExample:
+      "For example: of the outcomes the model rated between 60% and 70%, a well-calibrated one is right about 65% of the time. The closer the “predicted” and “observed” bars are, the better calibrated it is.",
+    calBucket: "Range",
+    calMatches: "Cases",
+    calPredicted: "Predicted",
+    calObserved: "Observed",
+    note: "Predictions are computed against each finished match and stored in your browser; the first run may take a few seconds.",
+    limits: {
+      title: "Limits & responsible use",
+      body: "These predictions are statistical estimates, not certainties: the model gets things wrong and football is unpredictable. This tool is informational and for entertainment, and does not promote betting. If you choose to bet, do it responsibly and never as a way to make money; if gambling stops being fun, seek professional help.",
+    },
   },
   modal: { close: "Close" },
   theme: {

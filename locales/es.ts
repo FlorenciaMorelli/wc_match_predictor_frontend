@@ -124,6 +124,55 @@ export const es: Translations = {
   },
   footer: {
     madeBy: "Desarrollado por",
+    modelAccuracy: "Sobre el modelo",
+    responsibleUse:
+      "Predicciones estadísticas con fines informativos y de entretenimiento. No promovemos las apuestas; si jugás, hacelo con responsabilidad.",
+  },
+  eval: {
+    title: "Sobre el modelo",
+    subtitle:
+      "Cómo funciona el predictor, qué tan acertado fue contra los resultados reales del Mundial 2026 y cómo interpretarlo.",
+    back: "Volver",
+    how: {
+      title: "¿Cómo funciona?",
+      intro:
+        "Para cada partido, el modelo estima cuántos goles puede marcar cada selección y simula el partido muchas veces para calcular las probabilidades.",
+      steps: [
+        "Estima la fuerza de cada selección a partir de su historial, dándole más peso a su forma reciente.",
+        "Calcula los goles esperados de cada equipo y ajusta los partidos de pocos goles.",
+        "Simula el partido 100.000 veces y cuenta con qué frecuencia ocurre cada marcador.",
+        "De esas simulaciones salen las probabilidades 1X2 y los marcadores más probables; en eliminatorias también simula alargue y penales.",
+      ],
+      models: "Podés comparar tres enfoques:",
+    },
+    modelLabel: "Modelo",
+    computing: (done, total) => `Evaluando ${done}/${total} partidos…`,
+    empty: "Todavía no hay partidos finalizados para evaluar.",
+    metricsTitle: "Qué tan acertado fue",
+    metrics: {
+      winner: "Acierto de ganador",
+      winnerHelp: "Partidos donde el desenlace más probable (1X2) coincidió con el real.",
+      brier: "Brier score",
+      brierHelp: "Calibración de las probabilidades (0 = perfecto, menor es mejor).",
+      exact: "Marcador exacto",
+      exactHelp: "Partidos donde el marcador más probable coincidió con el real.",
+      matches: "Partidos evaluados",
+      matchesHelp: "Finalizados con marcador, usados en el cálculo.",
+    },
+    calibrationTitle: "¿Son confiables las probabilidades?",
+    calibrationIntro:
+      "Agrupamos todas las probabilidades que dio el modelo en rangos de 10% y, para cada rango, comparamos el promedio que predijo con la frecuencia real con que esos resultados ocurrieron.",
+    calibrationExample:
+      "Por ejemplo: de los resultados a los que el modelo les asignó entre 60% y 70%, uno bien calibrado acierta cerca del 65% de las veces. Cuanto más se parecen las barras de “predicho” y “observado”, mejor calibrado está.",
+    calBucket: "Rango",
+    calMatches: "Casos",
+    calPredicted: "Predicho",
+    calObserved: "Observado",
+    note: "Las predicciones se calculan contra cada partido finalizado y se guardan en tu navegador; la primera vez el cálculo puede tardar unos segundos.",
+    limits: {
+      title: "Límites y uso responsable",
+      body: "Estas predicciones son estimaciones estadísticas, no certezas: el modelo se equivoca y el fútbol es impredecible. La herramienta es informativa y de entretenimiento, y no promueve las apuestas. Si decidís apostar, hacelo con responsabilidad y nunca como una forma de ganar dinero; si el juego deja de ser un juego, buscá ayuda profesional.",
+    },
   },
   modal: { close: "Cerrar" },
   theme: {
