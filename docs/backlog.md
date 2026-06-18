@@ -25,9 +25,9 @@ integración externa.
 | 8  | Posiciones correctas según el back            | ✅ Hecho      | `fix/lineup` (#29, `6fa39d8`)   |
 | 9  | Curar ausencias contra convocatoria WC2026    | Pendiente    | `fix/key-players-wc2026`        |
 | 10 | Camisetas con diseño real WC2026 (patrón + 2 colores) | ✅ Hecho | `feat/kit-designs-2026`    |
-| 11 | Nombre de camiseta real en la formación (`nombre_camiseta` CSV) | Pendiente | `feat/lineup-shirt-names` |
+| 11 | Nombre de camiseta real en la formación (`nombre_camiseta` CSV) | ✅ Hecho | `feat/lineup-shirt-names` |
 
-**Olas:** A = ítems 1-4 ✅ completa (`v0.2.0`). **Re-priorizado jun 2026 (torneo en curso):** B = ítem 9 ✅ (`v0.2.1`) → C = ítem 8 ✅ (en `staging`/`main`, PR #29) → D = ítem 6 ✅ (`v0.3.0`) → E = ítem 5 ✅ (`v0.4.0`) → F = ítem 10 ✅ (`v0.5.0`) → **G = ítem 11 (`v0.6.0`) ← próximo** → H = ítem 7 (`v0.7.0`). Ver sección "Plan de ejecución" abajo.
+**Olas:** A = ítems 1-4 ✅ completa (`v0.2.0`). **Re-priorizado jun 2026 (torneo en curso):** B = ítem 9 ✅ (`v0.2.1`) → C = ítem 8 ✅ (en `staging`/`main`, PR #29) → D = ítem 6 ✅ (`v0.3.0`) → E = ítem 5 ✅ (`v0.4.0`) → F = ítem 10 ✅ (`v0.5.0`) → G = ítem 11 ✅ (`v0.6.0`) → **H = ítem 7 (`v0.7.0`) ← próximo**. Ver sección "Plan de ejecución" abajo.
 
 Las secciones de abajo guardan el contexto detallado de los ítems pendientes.
 
@@ -296,7 +296,22 @@ arquero diferenciado y el fallback robusto; **sin dependencias de runtime ni im�
 
 ---
 
-## Nombre de camiseta real en la formación (ítem 11)
+## Nombre de camiseta real en la formación (ítem 11) — ✅ HECHO (`feat/lineup-shirt-names`, `v0.6.0`)
+
+**Implementado (jun 2026):**
+- `scripts/gen-shirt-names.mjs` (NUEVO, correr a mano): lee `squads_wc2026.csv`, mapea `abreviatura`
+  (FIFA3) → ISO2 y emite los datos. Corrido: 48 selecciones, 1248 jugadores, 0 omitidas.
+- `lib/shirt-names-data.ts` (GENERADO): `iso2 → [[nombre_completo, nombre_camiseta], …]`. Sin parseo de CSV
+  en runtime.
+- `lib/shirt-names.ts` (resolver): `shirtName(iso2, name)` con match generoso por tokens significativos
+  (misma estrategia que `key-players.ts`), acotado por país, gana mayor solapamiento, índice memoizado.
+- `prediction-result.tsx`: se threadea `iso2` (= `flag`) por `SinglePitch → PlayerNode`; etiqueta =
+  `shirtName(flag, name) ?? displaySurname(name)`; el `title`/tooltip mantiene el `name` completo.
+- Validado: VINICIUS JUNIOR → "VINI JR.", EDERSON SILVA → "ÉDERSON S.", HADJ MOUSSA / AIT NOURI completos,
+  dos HENDERSON desambiguados por nombre.
+
+Contexto original del ítem debajo.
+
 
 **Qué:** hoy el gráfico de posicionamiento (`components/prediction-result.tsx`, `PlayerNode`) etiqueta a
 cada jugador con `displaySurname(name)`, un apellido derivado **heurísticamente** del `name` del backend
@@ -348,7 +363,7 @@ ya firmes (convocatorias cerradas, XI visibles) y features *time-boxed* cuyo val
 | ✅ | **#6** Análisis (crónica por reglas) | `v0.3.0` | Hecho. Pivot TheSportsDB → ESPN (match exacto por id de evento) + generación por reglas, sin key ni costo. Crónica + lista de goles con minuto/penal/en contra. |
 | ✅ | **#5** UX de desconexión | `v0.4.0` | Hecho. `ApiError` por causa + `<ConnectionError>` reusable con reintento en los 4 sitios; arregla el bug i18n. |
 | ✅ | **#10** Camisetas 2026 | `v0.5.0` | Hecho. 3 kits/equipo + regla de contraste FIFA + designación oficial por partido (PDF→CSV) + color de arquero. |
-| P2 | **#11** Nombre de camiseta en formación | `v0.6.0` | *Polish* visual *evergreen*. Agrupado con #10 (mismo componente y dato WC2026). Reusa `squads_wc2026.csv` de #9; sin dep. externa ni backend. |
+| ✅ | **#11** Nombre de camiseta en formación | `v0.6.0` | Hecho. `nombre_camiseta` oficial vía match por tokens (CSV pre-procesado a `lib/shirt-names-data.ts`); fallback al apellido heurístico. |
 | P2 | **#7** Evaluador de accuracy | `v0.7.0` | Ruta oculta `/eval`. Reutiliza plomería de #6. Puede correr post-torneo. |
 
 **Trade-off explícito:** #6 > #5 por ventana del torneo. Invertible si se prefiere corregir el bug i18n
@@ -365,7 +380,7 @@ commit de ola B.
 | D | #6 crónica por reglas ✅ | `feat` | `v0.3.0` |
 | E | #5 desconexión UX ✅ | `feat` + `fix` i18n | `v0.4.0` (incluye bump `package.json`) |
 | F | #10 camisetas ✅ | `feat` | `v0.5.0` |
-| G | #11 nombre camiseta | `feat` | `v0.6.0` |
+| G | #11 nombre camiseta ✅ | `feat` | `v0.6.0` |
 | H | #7 evaluador | `feat` | `v0.7.0` |
 
 Flujo (igual al actual): cada ola = rama → PR → `staging`; al cerrar, `staging → main --ff-only + tag`.
@@ -418,15 +433,15 @@ Comandos los corre el usuario (Git Bash).
   `shirtToKit`, paleta de color del PDF); `lib/data/fwc2026_match_colours.csv` (referencia); reescritura de
   `JerseyIcon` (threading `kit` + `gkColor`). No toca API de Next.
 
-**#11 — Nombre de camiseta real en la formación (`feat/lineup-shirt-names` · `v0.6.0`)**
-- Ver sección "Nombre de camiseta real en la formación" arriba para el formato del CSV y el matching.
+**#11 — Nombre de camiseta real en la formación (✅ HECHO · `feat/lineup-shirt-names` · `v0.6.0`)**
+- Ver sección "Nombre de camiseta real en la formación" arriba para el detalle de lo implementado.
 - **FA:** RF: cada jugador del XI muestra su `nombre_camiseta` oficial cuando hay match; fallback a
   `displaySurname(name)`. RNF: sin parseo de CSV en runtime; sin tocar backend. **Aceptación:** match →
   etiqueta = `nombre_camiseta`; sin match / país sin datos → apellido heurístico actual, nunca vacío.
 - **UX/Writer:** sin cambios de copy; el `title`/tooltip mantiene el `name` completo del backend.
-- **Dev:** `lib/shirt-names.ts` (NUEVO, módulo estático derivado del CSV, mismo patrón que `key-players.ts`);
-  helper de match país (ISO2) + tokens (reusar `significantTokens`); en `PlayerNode`/`computeFormationLines`
-  resolver la etiqueta con fallback. No toca API de Next.
+- **Dev:** `scripts/gen-shirt-names.mjs` (generador) → `lib/shirt-names-data.ts` (GENERADO, datos) +
+  `lib/shirt-names.ts` (resolver con `significantTokens`, índice memoizado por país); en `PlayerNode` se
+  resuelve la etiqueta con fallback, threadeando `iso2` desde `TeamLineup → SinglePitch`. No toca API de Next.
 
 **#7 — Evaluador de accuracy (`feat/model-evaluator` · `v0.7.0`)**
 - **FA:** RF: `/eval` (oculta) con accuracy, Brier score, calibración y desglose por modelo sobre
