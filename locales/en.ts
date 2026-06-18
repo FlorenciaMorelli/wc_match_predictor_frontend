@@ -190,4 +190,14 @@ export const en: Translations = {
       scoreOutside: "The result wasn't among the 8 most likely",
     },
   },
+  errors: {
+    retry: "Retry",
+    offline: { title: "You're offline", body: "Check your internet connection and try again." },
+    waking: {
+      title: "Waking the server",
+      body: "It was asleep. Give it a few seconds and retry.",
+    },
+    slow: { title: "Took too long", body: "The server is slow. Try again in a moment." },
+    server: { title: "Something went wrong", body: "We hit a problem. Please retry." },
+  },
 };

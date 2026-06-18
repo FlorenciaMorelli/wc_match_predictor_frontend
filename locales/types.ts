@@ -135,4 +135,11 @@ export type Translations = {
       scoreOutside: string;
     };
   };
+  errors: {
+    retry: string;
+    offline: { title: string; body: string };
+    waking: { title: string; body: string };
+    slow: { title: string; body: string };
+    server: { title: string; body: string };
+  };
 };

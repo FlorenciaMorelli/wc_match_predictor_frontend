@@ -1,19 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { RotateCcw, Calendar } from "lucide-react";
 import type { Team, PredictResponse } from "@/types";
 import TeamPicker from "./team-picker";
 import ModelPicker, { type Model } from "./model-picker";
 import PredictionResult from "./prediction-result";
 import PredictLoader from "./predict-loader";
-import { fetchTeams, predictMatch } from "@/lib/api";
+import ConnectionError from "./connection-error";
+import { fetchTeams, predictMatch, toApiError, type ApiError } from "@/lib/api";
 import { useLanguage, teamName } from "@/lib/i18n";
 
 export default function PredictorSection() {
   const { t, locale } = useLanguage();
   const [teams, setTeams] = useState<Team[]>([]);
-  const [teamsError, setTeamsError] = useState(false);
+  const [teamsError, setTeamsError] = useState<ApiError | null>(null);
   const [teamA, setTeamA] = useState<Team | null>(null);
   const [teamB, setTeamB] = useState<Team | null>(null);
   const [knockout, setKnockout] = useState(false);
@@ -23,13 +24,22 @@ export default function PredictorSection() {
   );
   const [result, setResult] = useState<PredictResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ApiError | null>(null);
+
+  // setState solo en los callbacks (no sincrónico): así el efecto que lo invoca no
+  // dispara el lint react-hooks/set-state-in-effect. Éxito limpia el error.
+  const loadTeams = useCallback(() => {
+    fetchTeams()
+      .then((ts) => {
+        setTeams(ts);
+        setTeamsError(null);
+      })
+      .catch((e) => setTeamsError(toApiError(e)));
+  }, []);
 
   useEffect(() => {
-    fetchTeams()
-      .then(setTeams)
-      .catch(() => setTeamsError(true));
-  }, []);
+    loadTeams();
+  }, [loadTeams]);
 
   async function handlePredict() {
     if (!teamA || !teamB || teamA.id === teamB.id) return;
@@ -51,9 +61,7 @@ export default function PredictorSection() {
           ?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 80);
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : t.predictor.errorPredict
-      );
+      setError(toApiError(e));
     } finally {
       setLoading(false);
     }
@@ -85,9 +93,12 @@ export default function PredictorSection() {
           </div>
 
           {teamsError && (
-            <p className="mt-4 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
-              {t.predictor.errorLoad}
-            </p>
+            <ConnectionError
+              kind={teamsError.kind}
+              detail={teamsError.detail}
+              onRetry={loadTeams}
+              className="mt-4"
+            />
           )}
 
           <div className="mt-8 flex items-end gap-3">
@@ -192,9 +203,12 @@ export default function PredictorSection() {
           )}
 
           {error && (
-            <p className="mt-4 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
-              {error}
-            </p>
+            <ConnectionError
+              kind={error.kind}
+              detail={error.detail}
+              onRetry={handlePredict}
+              className="mt-4"
+            />
           )}
         </div>
 

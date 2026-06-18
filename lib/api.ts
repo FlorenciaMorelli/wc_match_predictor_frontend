@@ -14,6 +14,28 @@ import type {
   Team,
 } from "@/types";
 
+// Error tipado por causa: el cliente decide qué tarjeta mostrar según `kind`.
+// offline = fetch rechaza (sin red) · waking = 503 (predictor arrancando) ·
+// slow = timeout / 502 / 504 · server = otro 4xx/5xx (con `detail` opcional).
+export type ApiErrorKind = "offline" | "waking" | "slow" | "server";
+
+export class ApiError extends Error {
+  readonly kind: ApiErrorKind;
+  readonly detail?: string;
+  constructor(kind: ApiErrorKind, detail?: string) {
+    super(detail ?? kind);
+    this.name = "ApiError";
+    this.kind = kind;
+    this.detail = detail;
+  }
+}
+
+// Normaliza cualquier error atrapado a un ApiError (los desconocidos → "server").
+export function toApiError(e: unknown): ApiError {
+  if (e instanceof ApiError) return e;
+  return new ApiError("server", e instanceof Error ? e.message : undefined);
+}
+
 // Timeout para requests normales (fixture, teams). Generoso pero no crítico.
 const REQUEST_TIMEOUT_MS = 30_000;
 // Timeout para el predict: el modelo puede tardar ~150s en Render en frío.
@@ -30,34 +52,18 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
       ...init,
     });
   } catch (e) {
-    if (e instanceof DOMException && e.name === "TimeoutError") {
-      throw new Error(
-        "El servidor está tardando más de lo normal (puede estar despertando). Esperá unos segundos y reintentá."
-      );
-    }
-    throw new Error(
-      "No pudimos conectar con el servidor. Revisá tu conexión y reintentá."
-    );
+    // TimeoutError (AbortSignal.timeout) → lento; cualquier otro rechazo → sin red.
+    if (e instanceof DOMException && e.name === "TimeoutError") throw new ApiError("slow");
+    throw new ApiError("offline");
   }
 
   if (!res.ok) {
-    // 503: el predictor todavía se está cargando tras arrancar la instancia.
-    if (res.status === 503) {
-      throw new Error(
-        "El predictor se está iniciando. Probá de nuevo en unos segundos."
-      );
-    }
-    // 502/504: el proxy (Next o Vercel) cortó esperando al backend lento.
-    if (res.status === 502 || res.status === 504) {
-      throw new Error(
-        "El servidor tardó demasiado en responder. Reintentá en un momento."
-      );
-    }
+    if (res.status === 503) throw new ApiError("waking"); // predictor arrancando
+    if (res.status === 502 || res.status === 504) throw new ApiError("slow"); // proxy cortó
     const detail = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(
-      typeof detail.detail === "string"
-        ? detail.detail
-        : JSON.stringify(detail.detail)
+    throw new ApiError(
+      "server",
+      typeof detail.detail === "string" ? detail.detail : JSON.stringify(detail.detail)
     );
   }
 
@@ -143,14 +149,8 @@ export async function predictMatch(
         signal: AbortSignal.timeout(PREDICT_TIMEOUT_MS),
       });
     } catch (e) {
-      if (e instanceof DOMException && e.name === "TimeoutError") {
-        throw new Error(
-          "El servidor está tardando más de lo normal (puede estar despertando). Esperá unos segundos y reintentá."
-        );
-      }
-      throw new Error(
-        "No pudimos conectar con el servidor. Revisá tu conexión y reintentá."
-      );
+      if (e instanceof DOMException && e.name === "TimeoutError") throw new ApiError("slow");
+      throw new ApiError("offline");
     }
 
     if (res.status === 503 && attempt < MAX_RETRIES) {
@@ -159,27 +159,16 @@ export async function predictMatch(
     }
 
     if (!res.ok) {
-      if (res.status === 503) {
-        throw new Error(
-          "El predictor se está iniciando. Probá de nuevo en unos segundos."
-        );
-      }
-      if (res.status === 502 || res.status === 504) {
-        throw new Error(
-          "El servidor tardó demasiado en responder. Reintentá en un momento."
-        );
-      }
+      if (res.status === 503) throw new ApiError("waking");
+      if (res.status === 502 || res.status === 504) throw new ApiError("slow");
       const detail = await res.json().catch(() => ({ detail: res.statusText }));
-      throw new Error(
-        typeof detail.detail === "string"
-          ? detail.detail
-          : JSON.stringify(detail.detail)
+      throw new ApiError(
+        "server",
+        typeof detail.detail === "string" ? detail.detail : JSON.stringify(detail.detail)
       );
     }
 
     return res.json() as Promise<PredictResponse>;
   }
-  throw new Error(
-    "El predictor se está iniciando. Probá de nuevo en unos segundos."
-  );
+  throw new ApiError("waking");
 }
