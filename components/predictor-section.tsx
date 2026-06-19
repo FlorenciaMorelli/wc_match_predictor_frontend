@@ -77,17 +77,17 @@ export default function PredictorSection() {
   const sameTeam = !!teamA && !!teamB && teamA.id === teamB.id;
 
   return (
-    <section id="predictor" className="border-t border-line bg-surface">
+    <section id="predictor" className="border-line bg-surface border-t">
       <div className="mx-auto max-w-7xl px-6 py-20 md:px-12">
         <div className="mx-auto max-w-2xl">
           <div className="text-center">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-ink-subtle">
+            <p className="text-ink-subtle mb-1 text-xs font-semibold tracking-widest uppercase">
               {t.predictor.sectionLabel}
             </p>
-            <h2 className="font-display text-3xl font-extrabold tracking-tight text-ink md:text-4xl">
+            <h2 className="font-display text-ink text-3xl font-extrabold tracking-tight md:text-4xl">
               {t.predictor.heading}
             </h2>
-            <p className="mt-2 text-sm leading-6 text-ink-muted">
+            <p className="text-ink-muted mt-2 text-sm leading-6">
               {t.predictor.description}
             </p>
           </div>
@@ -103,7 +103,7 @@ export default function PredictorSection() {
 
           <div className="mt-8 flex items-end gap-3">
             <div className="flex-1">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-ink-subtle">
+              <label className="text-ink-subtle mb-2 block text-xs font-semibold tracking-widest uppercase">
                 {t.predictor.teamALabel}
               </label>
               <TeamPicker
@@ -114,11 +114,11 @@ export default function PredictorSection() {
                 disabled={teams.length === 0 && !teamsError}
               />
             </div>
-            <span className="mb-4 shrink-0 text-sm font-semibold text-ink-subtle">
+            <span className="text-ink-subtle mb-4 shrink-0 text-sm font-semibold">
               {t.fixture.vs}
             </span>
             <div className="flex-1">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-ink-subtle">
+              <label className="text-ink-subtle mb-2 block text-xs font-semibold tracking-widest uppercase">
                 {t.predictor.teamBLabel}
               </label>
               <TeamPicker
@@ -132,14 +132,14 @@ export default function PredictorSection() {
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
-            <label className="flex items-center gap-2 rounded-[10px] border border-line bg-surface px-3 py-1.5 text-sm text-ink focus-within:ring-2 focus-within:ring-brand focus-within:ring-offset-2">
-              <Calendar size={14} className="shrink-0 text-ink-subtle" />
+            <label className="border-line bg-surface text-ink focus-within:ring-brand flex items-center gap-2 rounded-[10px] border px-3 py-1.5 text-sm focus-within:ring-2 focus-within:ring-offset-2">
+              <Calendar size={14} className="text-ink-subtle shrink-0" />
               <input
                 type="date"
                 value={matchDate}
                 onChange={(e) => setMatchDate(e.target.value)}
                 aria-label={t.predictor.dateAriaLabel}
-                className="bg-transparent text-sm text-ink outline-none"
+                className="text-ink bg-transparent text-sm outline-none"
               />
             </label>
 
@@ -149,7 +149,7 @@ export default function PredictorSection() {
                 role="switch"
                 aria-checked={knockout}
                 onClick={() => setKnockout((v) => !v)}
-                className={`relative h-5 w-9 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
+                className={`focus-visible:ring-brand relative h-5 w-9 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
                   knockout ? "bg-brand" : "bg-line"
                 }`}
               >
@@ -159,7 +159,9 @@ export default function PredictorSection() {
                   }`}
                 />
               </button>
-              <span className="text-sm text-ink-muted">{t.predictor.knockout}</span>
+              <span className="text-ink-muted text-sm">
+                {t.predictor.knockout}
+              </span>
             </label>
 
             <div className="w-full sm:w-auto">
@@ -172,7 +174,7 @@ export default function PredictorSection() {
               type="button"
               onClick={handlePredict}
               disabled={!teamA || !teamB || sameTeam || loading}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand px-7 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+              className="bg-brand hover:bg-brand-hover focus-visible:ring-brand flex flex-1 items-center justify-center gap-2 rounded-xl px-7 py-3.5 text-[15px] font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
             >
               {loading ? (
                 <>
@@ -188,7 +190,7 @@ export default function PredictorSection() {
               <button
                 type="button"
                 onClick={reset}
-                className="flex items-center gap-1.5 rounded-xl border border-line px-4 py-3.5 text-sm text-ink-muted transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                className="border-line text-ink-muted hover:bg-canvas focus-visible:ring-brand flex items-center gap-1.5 rounded-xl border px-4 py-3.5 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
                 <RotateCcw size={13} />
                 {t.predictor.clear}
@@ -197,7 +199,7 @@ export default function PredictorSection() {
           </div>
 
           {sameTeam && (
-            <p className="mt-4 rounded-xl bg-canvas px-4 py-3 text-sm text-ink-muted">
+            <p className="bg-canvas text-ink-muted mt-4 rounded-xl px-4 py-3 text-sm">
               {t.predictor.sameTeam}
             </p>
           )}
@@ -214,20 +216,31 @@ export default function PredictorSection() {
 
         {loading && (
           <div className="mx-auto mt-2 max-w-2xl">
-            <div className="rounded-2xl border border-line bg-surface p-8">
+            <div className="border-line bg-surface rounded-2xl border p-8">
               <PredictLoader
                 flagA={teamA?.flag}
-                nameA={teamA ? teamName(teamA.canonical, teamA.name_es, locale) : undefined}
+                nameA={
+                  teamA
+                    ? teamName(teamA.canonical, teamA.name_es, locale)
+                    : undefined
+                }
                 flagB={teamB?.flag}
-                nameB={teamB ? teamName(teamB.canonical, teamB.name_es, locale) : undefined}
+                nameB={
+                  teamB
+                    ? teamName(teamB.canonical, teamB.name_es, locale)
+                    : undefined
+                }
               />
             </div>
           </div>
         )}
 
         {result && !loading && (
-          <div id="predictor-result" className="mx-auto mt-2 max-w-2xl scroll-mt-20">
-            <div className="rounded-2xl border border-line bg-surface p-8">
+          <div
+            id="predictor-result"
+            className="mx-auto mt-2 max-w-2xl scroll-mt-20"
+          >
+            <div className="border-line bg-surface rounded-2xl border p-8">
               <PredictionResult result={result} />
             </div>
           </div>

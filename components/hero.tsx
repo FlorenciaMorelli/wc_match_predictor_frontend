@@ -9,17 +9,16 @@ export default function Hero() {
 
   return (
     <section className="mx-auto flex max-w-7xl flex-col items-center px-6 py-12 text-center md:px-12 md:py-16 lg:py-20">
-      <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-ink-muted shadow-sm">
+      <span className="border-line bg-surface text-ink-muted mb-4 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold tracking-widest uppercase shadow-sm">
         <span className="wc-tricolor h-2.5 w-2.5 rounded-full" />
         {t.hero.badge}
       </span>
 
-      <h1 className="max-w-2xl font-display text-3xl font-extrabold leading-[1.1] tracking-tight text-ink sm:text-4xl md:text-5xl">
-        {t.hero.heading1}{" "}
-        <span className="text-brand">{t.hero.heading2}</span>
+      <h1 className="font-display text-ink max-w-2xl text-3xl leading-[1.1] font-extrabold tracking-tight sm:text-4xl md:text-5xl">
+        {t.hero.heading1} <span className="text-brand">{t.hero.heading2}</span>
       </h1>
 
-      <p className="mt-4 max-w-xl text-sm leading-6 text-ink-muted md:text-base">
+      <p className="text-ink-muted mt-4 max-w-xl text-sm leading-6 md:text-base">
         {t.hero.description}
       </p>
 
@@ -30,14 +29,14 @@ export default function Hero() {
       <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
         <a
           href="#predictor"
-          className="flex items-center gap-2 rounded-xl bg-brand px-7 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+          className="bg-brand hover:bg-brand-hover focus-visible:ring-brand flex items-center gap-2 rounded-xl px-7 py-3.5 text-[15px] font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
         >
           {t.hero.ctaPredict}
           <ArrowRight size={16} />
         </a>
         <a
           href="#fixture"
-          className="rounded-xl border border-line bg-surface px-7 py-3.5 text-[15px] font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+          className="border-line bg-surface text-ink hover:bg-canvas focus-visible:ring-brand rounded-xl border px-7 py-3.5 text-[15px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
         >
           {t.hero.ctaFixture}
         </a>

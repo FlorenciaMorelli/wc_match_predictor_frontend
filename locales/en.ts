@@ -44,8 +44,7 @@ export const en: Translations = {
     matchday: (n: number) => `Matchday ${n}`,
     pendingTitle: "To be defined",
     pendingDescription: "Matchups are set as the tournament progresses.",
-    description:
-      'Tap "View prediction" on any match to see the full analysis.',
+    description: 'Tap "View prediction" on any match to see the full analysis.',
     emptyState: "No matches scheduled in this period.",
     loadMore: "Load more matches",
     today: "Today",
@@ -69,7 +68,7 @@ export const en: Translations = {
       programado: "Scheduled",
       STATUS_FULL_TIME: "Full time",
       STATUS_FIRST_HALF: "First half",
-      STATUS_SECOND_HALF: "Second half"
+      STATUS_SECOND_HALF: "Second half",
     },
   },
   predictor: {
@@ -118,8 +117,7 @@ export const en: Translations = {
     },
     poisson_simple: {
       label: "Simple Poisson",
-      description:
-        "Baseline model. Estimates each team's goals independently.",
+      description: "Baseline model. Estimates each team's goals independently.",
     },
   },
   footer: {
@@ -151,11 +149,13 @@ export const en: Translations = {
     metricsTitle: "How accurate it has been",
     metrics: {
       winner: "Winner accuracy",
-      winnerHelp: "Matches where the most likely outcome (1X2) matched the real one.",
+      winnerHelp:
+        "Matches where the most likely outcome (1X2) matched the real one.",
       brier: "Brier score",
       brierHelp: "Probability calibration (0 = perfect, lower is better).",
       exact: "Exact score",
-      exactHelp: "Matches where the most likely scoreline matched the real one.",
+      exactHelp:
+        "Matches where the most likely scoreline matched the real one.",
       matches: "Matches evaluated",
       matchesHelp: "Finished with a score, used in the computation.",
     },
@@ -203,7 +203,8 @@ export const en: Translations = {
     analysis: "Analysis",
     summary: {
       win: (winner, loser, gf, ga) => `${winner} beat ${loser} ${gf}–${ga}`,
-      draw: (teamA, teamB, goals) => `${teamA} and ${teamB} drew ${goals}–${goals}`,
+      draw: (teamA, teamB, goals) =>
+        `${teamA} and ${teamB} drew ${goals}–${goals}`,
       blowout: "by a wide margin",
       narrow: "by a single goal",
       highScoring: "in a high-scoring game",
@@ -241,12 +242,21 @@ export const en: Translations = {
   },
   errors: {
     retry: "Retry",
-    offline: { title: "You're offline", body: "Check your internet connection and try again." },
+    offline: {
+      title: "You're offline",
+      body: "Check your internet connection and try again.",
+    },
     waking: {
       title: "Waking the server",
       body: "It was asleep. Give it a few seconds and retry.",
     },
-    slow: { title: "Took too long", body: "The server is slow. Try again in a moment." },
-    server: { title: "Something went wrong", body: "We hit a problem. Please retry." },
+    slow: {
+      title: "Took too long",
+      body: "The server is slow. Try again in a moment.",
+    },
+    server: {
+      title: "Something went wrong",
+      body: "We hit a problem. Please retry.",
+    },
   },
 };

@@ -23,7 +23,7 @@ export default function ThemeToggle() {
       type="button"
       onClick={toggleTheme}
       aria-label={isDark ? t.theme.toLight : t.theme.toDark}
-      className="rounded-full p-1.5 text-ink-muted transition-colors hover:bg-canvas hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+      className="text-ink-muted hover:bg-canvas hover:text-ink focus-visible:ring-brand rounded-full p-1.5 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
     >
       <Sun size={16} className="hidden dark:block" />
       <Moon size={16} className="block dark:hidden" />

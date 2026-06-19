@@ -103,15 +103,15 @@ npm run start
 
 ## 📦 Scripts
 
-| Script | Descripción |
-|--------|-------------|
-| `npm run dev` | Servidor de desarrollo |
-| `npm run build` | Build de producción |
-| `npm run start` | Ejecuta el build de producción |
-| `npm run lint` | ESLint |
-| `npm run typecheck` | Chequeo de tipos con `tsc --noEmit` |
-| `npm run format` | Formatea el código con Prettier |
-| `npm run format:check` | Verifica el formato sin escribir |
+| Script                 | Descripción                         |
+| ---------------------- | ----------------------------------- |
+| `npm run dev`          | Servidor de desarrollo              |
+| `npm run build`        | Build de producción                 |
+| `npm run start`        | Ejecuta el build de producción      |
+| `npm run lint`         | ESLint                              |
+| `npm run typecheck`    | Chequeo de tipos con `tsc --noEmit` |
+| `npm run format`       | Formatea el código con Prettier     |
+| `npm run format:check` | Verifica el formato sin escribir    |
 
 Para correr ESLint con autofix: `npm run lint -- --fix`.
 
@@ -153,7 +153,7 @@ Documentación Swagger: https://wc-match-predictor.onrender.com/docs
 
 ## 🌳 Flujo de trabajo
 
-El repositorio usa dos ramas protegidas por *rulesets*:
+El repositorio usa dos ramas protegidas por _rulesets_:
 
 - **`staging`** — integración. Solo se actualiza vía **Pull Request** y requiere el check `build` (CI) en verde.
 - **`main`** — releases. Push restringido e **historial lineal** (sin merge commits).
@@ -162,7 +162,7 @@ Ciclo de un cambio:
 
 1. Ramificar desde `staging` (`git switch -c feat/mi-cambio`).
 2. Implementar y verificar local: `npm run lint && npm run typecheck && npm run build`.
-3. Abrir un **PR hacia `staging`**; al pasar el CI, *squash & merge*.
+3. Abrir un **PR hacia `staging`**; al pasar el CI, _squash & merge_.
 4. Promover a `main` reflejando staging: `git merge --squash staging` + commit + push, y taggear (`vX.Y.Z`).
 
 Un workflow **Guard main** verifica que el contenido de `main` coincida con `staging` tras cada promote.

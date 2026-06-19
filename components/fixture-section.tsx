@@ -3,18 +3,32 @@
 import { useState, useEffect, useId, useRef, useCallback } from "react";
 import { CalendarDays } from "lucide-react";
 import type { FixtureMatch, MatchStatus, PredictResponse } from "@/types";
-import { fetchFixture, predictMatch, toApiError, type ApiError } from "@/lib/api";
+import {
+  fetchFixture,
+  predictMatch,
+  toApiError,
+  type ApiError,
+} from "@/lib/api";
 import PredictionResult from "./prediction-result";
 import PredictLoader from "./predict-loader";
 import ConnectionError from "./connection-error";
 import FlagImage from "./flag-image";
 import Modal from "./modal";
 import { useLanguage, teamName } from "@/lib/i18n";
-import { formatLocalTime, localTimeZoneName, localDateString, matchKickoff } from "@/lib/datetime";
+import {
+  formatLocalTime,
+  localTimeZoneName,
+  localDateString,
+  matchKickoff,
+} from "@/lib/datetime";
 import { cityForVenue, homeNationIso } from "@/lib/venues";
 
 const LIVE_STATUSES = new Set([
-  "en juego", "STATUS_FIRST_HALF", "STATUS_SECOND_HALF", "descanso", "STATUS_HALFTIME",
+  "en juego",
+  "STATUS_FIRST_HALF",
+  "STATUS_SECOND_HALF",
+  "descanso",
+  "STATUS_HALFTIME",
 ]);
 
 const FINISHED_STATUSES = new Set(["finalizado", "STATUS_FULL_TIME"]);
@@ -35,17 +49,22 @@ function effectiveStatus(match: FixtureMatch): MatchStatus {
 }
 
 const STATUS_STYLE: Record<string, string> = {
-  "en juego":         "text-emerald-700 bg-emerald-50 dark:text-emerald-300/90 dark:bg-emerald-900/20",
-  STATUS_FIRST_HALF:  "text-emerald-700 bg-emerald-50 dark:text-emerald-300/90 dark:bg-emerald-900/20",
-  STATUS_SECOND_HALF: "text-emerald-700 bg-emerald-50 dark:text-emerald-300/90 dark:bg-emerald-900/20",
-  descanso:           "text-amber-700  bg-amber-50  dark:text-amber-300/90  dark:bg-amber-900/20",
-  STATUS_HALFTIME:    "text-amber-700  bg-amber-50  dark:text-amber-300/90  dark:bg-amber-900/20",
-  finalizado:         "text-ink-muted bg-canvas",
-  STATUS_FULL_TIME:   "text-ink-muted bg-canvas",
-  postergado:         "text-danger bg-danger-soft",
-  cancelado:          "text-danger bg-danger-soft",
-  suspendido:         "text-danger bg-danger-soft",
-  programado:         "text-ink-muted bg-canvas",
+  "en juego":
+    "text-emerald-700 bg-emerald-50 dark:text-emerald-300/90 dark:bg-emerald-900/20",
+  STATUS_FIRST_HALF:
+    "text-emerald-700 bg-emerald-50 dark:text-emerald-300/90 dark:bg-emerald-900/20",
+  STATUS_SECOND_HALF:
+    "text-emerald-700 bg-emerald-50 dark:text-emerald-300/90 dark:bg-emerald-900/20",
+  descanso:
+    "text-amber-700  bg-amber-50  dark:text-amber-300/90  dark:bg-amber-900/20",
+  STATUS_HALFTIME:
+    "text-amber-700  bg-amber-50  dark:text-amber-300/90  dark:bg-amber-900/20",
+  finalizado: "text-ink-muted bg-canvas",
+  STATUS_FULL_TIME: "text-ink-muted bg-canvas",
+  postergado: "text-danger bg-danger-soft",
+  cancelado: "text-danger bg-danger-soft",
+  suspendido: "text-danger bg-danger-soft",
+  programado: "text-ink-muted bg-canvas",
 };
 
 // Ventana del fixture: 30 días cubre toda la fase de grupos desde el arranque.
@@ -115,7 +134,7 @@ type JumpTarget = { date: string; segId: string; isToday: boolean };
 // impuras (Date.now) directamente en el cuerpo del componente.
 function computeJumpTarget(
   matches: FixtureMatch[],
-  segments: Segment[],
+  segments: Segment[]
 ): JumpTarget | null {
   const today = todayLocalYmd();
   const inToday = (m: FixtureMatch) =>
@@ -202,9 +221,19 @@ function MatchCard({ match }: { match: FixtureMatch }) {
   const roundLabel = match.round
     ? (t.fixture.rounds[match.round.toLowerCase()] ?? match.round)
     : "";
-  const localTime = formatLocalTime(match.date, match.time_utc, t.meta.dateLocale);
-  const tzName = localTimeZoneName(match.date, t.meta.dateLocale, match.time_utc);
-  const utcTooltip = match.time_utc ? `${match.time_utc} ${t.fixture.utcSuffix}` : "";
+  const localTime = formatLocalTime(
+    match.date,
+    match.time_utc,
+    t.meta.dateLocale
+  );
+  const tzName = localTimeZoneName(
+    match.date,
+    t.meta.dateLocale,
+    match.time_utc
+  );
+  const utcTooltip = match.time_utc
+    ? `${match.time_utc} ${t.fixture.utcSuffix}`
+    : "";
   const isFinished = FINISHED_STATUSES.has(status);
   // "Ver análisis" si el partido ya arrancó (en vivo) o terminó; si no, "Ver predicción".
   const hasStarted = isLive || isFinished;
@@ -222,14 +251,14 @@ function MatchCard({ match }: { match: FixtureMatch }) {
       ? match.flag_a === hostIso
         ? nameA
         : match.flag_b === hostIso
-        ? nameB
-        : null
+          ? nameB
+          : null
       : null;
   const cardVenueLabel = match.neutral
     ? t.result.venueNeutral
     : homeTeamName != null
-    ? t.result.venueHome(homeTeamName)
-    : null;
+      ? t.result.venueHome(homeTeamName)
+      : null;
 
   // Solo mostramos marcador si el partido arrancó (en vivo o finalizado) Y la API
   // lo confirma explícitamente (no lo inferimos nosotros). Los `programado` llegan
@@ -265,20 +294,20 @@ function MatchCard({ match }: { match: FixtureMatch }) {
   return (
     <>
       <div
-        className={`flex h-full flex-col overflow-hidden rounded-2xl border bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.06)] ${
-          isLive ? "border-danger ring-1 ring-danger" : "border-line"
+        className={`bg-surface flex h-full flex-col overflow-hidden rounded-2xl border shadow-[0_1px_3px_rgba(0,0,0,0.06)] ${
+          isLive ? "border-danger ring-danger ring-1" : "border-line"
         }`}
       >
         <div className="flex-1 p-6">
           <div className="mb-4 flex items-center justify-between">
-            <span className="text-xs text-ink-subtle" title={utcTooltip}>
+            <span className="text-ink-subtle text-xs" title={utcTooltip}>
               {localTime && tzName ? `${localTime} ${tzName}` : localTime}
             </span>
             <span
-              className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyle}${isLive ? " motion-safe:animate-pulse" : ""}`}
+              className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyle}${isLive ? "motion-safe:animate-pulse" : ""}`}
             >
               {isLive && (
-                <span className="h-1.5 w-1.5 motion-safe:animate-pulse rounded-full bg-current" />
+                <span className="h-1.5 w-1.5 rounded-full bg-current motion-safe:animate-pulse" />
               )}
               {statusLabel}
             </span>
@@ -288,7 +317,10 @@ function MatchCard({ match }: { match: FixtureMatch }) {
             <div className="flex flex-1 flex-col items-center gap-2">
               <FlagImage iso2={match.flag_a} name={nameA} size="md" />
               <div className="flex min-h-[2.5rem] w-full items-start justify-center">
-                <span title={nameA} className="line-clamp-2 text-center text-sm font-semibold leading-tight text-ink">
+                <span
+                  title={nameA}
+                  className="text-ink line-clamp-2 text-center text-sm leading-tight font-semibold"
+                >
                   {nameA}
                 </span>
               </div>
@@ -296,11 +328,11 @@ function MatchCard({ match }: { match: FixtureMatch }) {
 
             <div className="flex flex-col items-center gap-0.5">
               {hasScore ? (
-                <span className="text-2xl font-bold text-ink">
+                <span className="text-ink text-2xl font-bold">
                   {match.score_a} – {match.score_b}
                 </span>
               ) : (
-                <span className="text-sm font-semibold text-ink-subtle">
+                <span className="text-ink-subtle text-sm font-semibold">
                   {t.fixture.vs}
                 </span>
               )}
@@ -309,7 +341,10 @@ function MatchCard({ match }: { match: FixtureMatch }) {
             <div className="flex flex-1 flex-col items-center gap-2">
               <FlagImage iso2={match.flag_b} name={nameB} size="md" />
               <div className="flex min-h-[2.5rem] w-full items-start justify-center">
-                <span title={nameB} className="line-clamp-2 text-center text-sm font-semibold leading-tight text-ink">
+                <span
+                  title={nameB}
+                  className="text-ink line-clamp-2 text-center text-sm leading-tight font-semibold"
+                >
                   {nameB}
                 </span>
               </div>
@@ -317,17 +352,17 @@ function MatchCard({ match }: { match: FixtureMatch }) {
           </div>
 
           {(city || match.venue || cardVenueLabel) && (
-            <p className="mt-3 text-center text-xs text-ink-subtle">
+            <p className="text-ink-subtle mt-3 text-center text-xs">
               {[city, match.venue, cardVenueLabel].filter(Boolean).join(" · ")}
             </p>
           )}
         </div>
 
-        <div className="border-t border-line px-6 py-3">
+        <div className="border-line border-t px-6 py-3">
           <button
             type="button"
             onClick={handleOpen}
-            className="w-full rounded-sm text-center text-xs font-semibold uppercase tracking-widest text-brand transition-colors hover:text-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+            className="text-brand hover:text-brand-hover focus-visible:ring-brand w-full rounded-sm text-center text-xs font-semibold tracking-widest uppercase transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
           >
             {hasStarted ? t.fixture.viewAnalysis : t.fixture.viewPrediction}
           </button>
@@ -340,12 +375,17 @@ function MatchCard({ match }: { match: FixtureMatch }) {
         labelledBy={titleId}
         header={
           <div className="min-w-0">
-            <h3 id={titleId} className="truncate text-base font-semibold text-ink">
+            <h3
+              id={titleId}
+              className="text-ink truncate text-base font-semibold"
+            >
               {nameA}{" "}
-              <span className="font-normal text-ink-subtle">{t.fixture.vs}</span>{" "}
+              <span className="text-ink-subtle font-normal">
+                {t.fixture.vs}
+              </span>{" "}
               {nameB}
             </h3>
-            <p className="mt-0.5 truncate text-xs capitalize text-ink-subtle">
+            <p className="text-ink-subtle mt-0.5 truncate text-xs capitalize">
               {[
                 formatDay(match.date, t.meta.dateLocale),
                 localTime && tzName ? `${localTime} ${tzName}` : localTime,
@@ -355,7 +395,7 @@ function MatchCard({ match }: { match: FixtureMatch }) {
                 .join(" · ")}
             </p>
             {(city || match.venue) && (
-              <p className="mt-0.5 truncate text-xs text-ink-subtle">
+              <p className="text-ink-subtle mt-0.5 truncate text-xs">
                 {[city, match.venue].filter(Boolean).join(" · ")}
               </p>
             )}
@@ -413,9 +453,9 @@ function MatchDays({ matches }: { matches: FixtureMatch[] }) {
         const rel = relativeDayKey(date);
         return (
           <div key={date} id={`fixture-day-${date}`} className="scroll-mt-24">
-            <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold capitalize text-ink-muted">
+            <h4 className="text-ink-muted mb-4 flex items-center gap-2 text-sm font-semibold capitalize">
               {rel && (
-                <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-brand">
+                <span className="bg-brand-soft text-brand rounded-full px-2.5 py-0.5 text-xs font-bold tracking-wide uppercase">
                   {t.fixture[rel]}
                 </span>
               )}
@@ -437,8 +477,8 @@ function MatchDays({ matches }: { matches: FixtureMatch[] }) {
 function PhasePlaceholder() {
   const { t } = useLanguage();
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-canvas/40 px-6 py-14 text-center">
-      <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-brand-soft text-brand">
+    <div className="border-line bg-canvas/40 flex flex-col items-center justify-center rounded-2xl border border-dashed px-6 py-14 text-center">
+      <span className="bg-brand-soft text-brand mb-3 flex h-11 w-11 items-center justify-center rounded-full">
         <svg
           className="h-5 w-5"
           viewBox="0 0 24 24"
@@ -453,8 +493,10 @@ function PhasePlaceholder() {
           <path d="M3 9h18M8 2.5v4M16 2.5v4" />
         </svg>
       </span>
-      <p className="text-sm font-semibold text-ink-muted">{t.fixture.pendingTitle}</p>
-      <p className="mt-1 max-w-xs text-xs text-ink-subtle">
+      <p className="text-ink-muted text-sm font-semibold">
+        {t.fixture.pendingTitle}
+      </p>
+      <p className="text-ink-subtle mt-1 max-w-xs text-xs">
         {t.fixture.pendingDescription}
       </p>
     </div>
@@ -465,10 +507,10 @@ function PhasePlaceholder() {
 function PhaseHeader({ title }: { title: string }) {
   return (
     <div className="flex items-center gap-4">
-      <h3 className="font-display text-xl font-bold tracking-tight text-ink md:text-2xl">
+      <h3 className="font-display text-ink text-xl font-bold tracking-tight md:text-2xl">
         {title}
       </h3>
-      <span className="h-px flex-1 bg-line" />
+      <span className="bg-line h-px flex-1" />
     </div>
   );
 }
@@ -569,19 +611,19 @@ export default function FixtureSection() {
 
   return (
     <section id="fixture" className="mx-auto max-w-7xl px-6 py-20 md:px-12">
-      <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-ink-subtle">
+      <p className="text-ink-subtle mb-1 text-xs font-semibold tracking-widest uppercase">
         {t.fixture.sectionLabel}
       </p>
-      <h2 className="font-display text-3xl font-extrabold tracking-tight text-ink md:text-4xl">
+      <h2 className="font-display text-ink text-3xl font-extrabold tracking-tight md:text-4xl">
         {t.fixture.heading}
       </h2>
-      <p className="mt-2 text-sm leading-6 text-ink-muted">
+      <p className="text-ink-muted mt-2 text-sm leading-6">
         {t.fixture.description}
       </p>
 
       {loading && (
         <div className="mt-12 flex justify-center">
-          <span className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-brand" />
+          <span className="border-line border-t-brand h-6 w-6 animate-spin rounded-full border-2" />
         </div>
       )}
 
@@ -601,7 +643,7 @@ export default function FixtureSection() {
               <button
                 type="button"
                 onClick={handleJump}
-                className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm font-semibold text-brand transition-colors hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                className="border-line bg-surface text-brand hover:bg-brand-soft focus-visible:ring-brand inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
                 <CalendarDays size={15} aria-hidden />
                 {jumpTarget.isToday ? t.fixture.today : t.fixture.jumpUpcoming}
@@ -613,7 +655,7 @@ export default function FixtureSection() {
             <div
               role="tablist"
               aria-label={t.fixture.sectionLabel}
-              className="flex min-w-max gap-1 border-b border-line"
+              className="border-line flex min-w-max gap-1 border-b"
             >
               {segments.map((s) => {
                 const isActive = activeSeg.id === s.id;
@@ -624,13 +666,13 @@ export default function FixtureSection() {
                     role="tab"
                     aria-selected={isActive}
                     onClick={() => setActiveId(s.id)}
-                    className={`relative whitespace-nowrap px-4 py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
+                    className={`focus-visible:ring-brand relative px-4 py-3 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
                       isActive ? "text-brand" : "text-ink-muted hover:text-ink"
                     }`}
                   >
                     {s.tabLabel}
                     {isActive && (
-                      <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-brand" />
+                      <span className="bg-brand absolute inset-x-2 -bottom-px h-0.5 rounded-full" />
                     )}
                   </button>
                 );

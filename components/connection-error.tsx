@@ -32,23 +32,25 @@ export default function ConnectionError({
   return (
     <div
       role="alert"
-      className={`flex flex-col items-center gap-3 rounded-xl bg-canvas px-6 py-8 text-center ${className ?? ""}`}
+      className={`bg-canvas flex flex-col items-center gap-3 rounded-xl px-6 py-8 text-center ${className ?? ""}`}
     >
-      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-surface text-ink-muted shadow-sm">
+      <span className="bg-surface text-ink-muted flex h-11 w-11 items-center justify-center rounded-full shadow-sm">
         <Icon size={20} />
       </span>
       <div>
-        <p className="font-display text-base font-bold text-ink">{copy.title}</p>
-        <p className="mt-1 text-sm leading-6 text-ink-muted">{copy.body}</p>
+        <p className="font-display text-ink text-base font-bold">
+          {copy.title}
+        </p>
+        <p className="text-ink-muted mt-1 text-sm leading-6">{copy.body}</p>
         {kind === "server" && detail && (
-          <p className="mt-1 text-xs text-ink-subtle">{detail}</p>
+          <p className="text-ink-subtle mt-1 text-xs">{detail}</p>
         )}
       </div>
       {onRetry && (
         <button
           type="button"
           onClick={onRetry}
-          className="mt-1 flex items-center gap-1.5 rounded-xl border border-line px-4 py-2 text-sm font-semibold text-ink-muted transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+          className="border-line text-ink-muted hover:bg-surface focus-visible:ring-brand mt-1 flex items-center gap-1.5 rounded-xl border px-4 py-2 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
         >
           <RotateCcw size={14} />
           {t.errors.retry}

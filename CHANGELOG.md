@@ -5,6 +5,17 @@ Todos los cambios relevantes de este proyecto se documentan acá.
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 adhiere a [SemVer](https://semver.org/lang/es/). Cada versión corresponde a un tag `vX.Y.Z`.
 
+## [0.7.2] — 2026-06-18
+
+### Changed
+
+- Formato unificado con **Prettier** en todo el repo (`printWidth` 80 + orden de clases de Tailwind).
+
+### Added
+
+- `.prettierignore` (excluye lockfile y módulos/datos generados).
+- Step `format:check` en el workflow de CI: el formato ahora se valida automáticamente.
+
 ## [0.7.1] — 2026-06-18
 
 ### Changed
@@ -91,6 +102,7 @@ adhiere a [SemVer](https://semver.org/lang/es/). Cada versión corresponde a un 
 > El historial previo a `0.2.0` (narrativa traducida es→en, sede neutral i18n y la base de la app)
 > está en el log de git.
 
+[0.7.2]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.5.0...v0.6.0

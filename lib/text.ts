@@ -8,8 +8,29 @@
 
 // Partículas de apellido (no cuentan como token discriminante: "van", "de", "al", …).
 const PARTICLES = new Set([
-  "van", "von", "der", "den", "ter", "ten", "de", "del", "della", "di", "da",
-  "dos", "das", "do", "la", "le", "bin", "ibn", "al", "el", "mac", "mc", "o",
+  "van",
+  "von",
+  "der",
+  "den",
+  "ter",
+  "ten",
+  "de",
+  "del",
+  "della",
+  "di",
+  "da",
+  "dos",
+  "das",
+  "do",
+  "la",
+  "le",
+  "bin",
+  "ibn",
+  "al",
+  "el",
+  "mac",
+  "mc",
+  "o",
 ]);
 
 // Largo mínimo de un token "significativo" (descarta iniciales y partículas cortas

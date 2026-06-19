@@ -5,21 +5,21 @@
 // El `id` del partido (FixtureMatch.id) sigue siendo string.
 
 export interface Team {
-  id: number;        // ID numérico estable (ej. 20). Usar para /api/predict.
+  id: number; // ID numérico estable (ej. 20). Usar para /api/predict.
   canonical: string; // nombre interno en inglés: "Argentina", "Korea Republic"
-  name_es: string;   // nombre en español para mostrar al usuario
-  flag: string;      // código ISO2 para flagcdn.com (ej. "ar")
+  name_es: string; // nombre en español para mostrar al usuario
+  flag: string; // código ISO2 para flagcdn.com (ej. "ar")
 }
 
 export interface FixtureMatch {
-  id: string;          // ID del partido (string, ej. "760440")
-  date: string;        // "2026-06-15"
-  time_utc: string;    // hora UTC: "20:00" o, a veces, hora suelta "20"
-  team_a_id: number;   // ID numérico — usar para llamar a /api/predict
+  id: string; // ID del partido (string, ej. "760440")
+  date: string; // "2026-06-15"
+  time_utc: string; // hora UTC: "20:00" o, a veces, hora suelta "20"
+  team_a_id: number; // ID numérico — usar para llamar a /api/predict
   team_b_id: number;
-  team_a: string;      // canónico inglés (para debugging)
+  team_a: string; // canónico inglés (para debugging)
   team_b: string;
-  team_a_es: string;   // nombre en español para mostrar
+  team_a_es: string; // nombre en español para mostrar
   team_b_es: string;
   flag_a: string;
   flag_b: string;
@@ -39,10 +39,10 @@ export interface PlayerSlot {
 }
 
 export interface PredictRequest {
-  team_a_id: number;   // ID numérico de /api/teams
+  team_a_id: number; // ID numérico de /api/teams
   team_b_id: number;
-  date?: string;       // "YYYY-MM-DD"; default = hoy
-  knockout?: boolean;  // true = modo eliminatoria con penales
+  date?: string; // "YYYY-MM-DD"; default = hoy
+  knockout?: boolean; // true = modo eliminatoria con penales
   model?: "dixon_coles" | "bivariate_poisson" | "poisson_simple";
 }
 
@@ -54,19 +54,19 @@ export interface ScoreProbability {
 
 export interface PredictResponse {
   // Equipos
-  team_a_id: number;   // ID numérico — clave estable
+  team_a_id: number; // ID numérico — clave estable
   team_b_id: number;
-  team_a: string;      // canónico inglés
+  team_a: string; // canónico inglés
   team_b: string;
-  team_a_es: string;   // español para mostrar
+  team_a_es: string; // español para mostrar
   team_b_es: string;
   flag_a: string;
   flag_b: string;
 
   // Probabilidades 90 min
-  p_a: number;         // probabilidad de victoria equipo A (0–1)
-  p_draw: number;      // probabilidad de empate (0–1)
-  p_b: number;         // probabilidad de victoria equipo B (0–1)
+  p_a: number; // probabilidad de victoria equipo A (0–1)
+  p_draw: number; // probabilidad de empate (0–1)
+  p_b: number; // probabilidad de victoria equipo B (0–1)
 
   // Goles esperados
   xg_a: number;
@@ -77,8 +77,8 @@ export interface PredictResponse {
 
   // Sede
   neutral: boolean;
-  home_team_id: number | null;  // ID del equipo local; null = cancha neutral
-  venue_label: string;          // texto listo para mostrar
+  home_team_id: number | null; // ID del equipo local; null = cancha neutral
+  venue_label: string; // texto listo para mostrar
 
   // Fuente de datos de plantilla
   squad_desc_a: string;

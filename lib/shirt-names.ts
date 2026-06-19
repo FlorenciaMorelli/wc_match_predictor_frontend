@@ -24,7 +24,10 @@ function indexFor(iso2: string): IndexedRow[] {
   let idx = indexCache.get(iso2);
   if (!idx) {
     const rows = SHIRT_NAMES[iso2] ?? [];
-    idx = rows.map(([full, shirt]) => ({ tokens: new Set(significantTokens(full)), shirt }));
+    idx = rows.map(([full, shirt]) => ({
+      tokens: new Set(significantTokens(full)),
+      shirt,
+    }));
     indexCache.set(iso2, idx);
   }
   return idx;
