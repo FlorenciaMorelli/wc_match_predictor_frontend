@@ -1,0 +1,13 @@
+# Normaliza el fin de línea: LF tanto en el repo como en el working copy
+# (evita el ruido CRLF↔LF en Windows). Los binarios quedan sin conversión.
+* text=auto eol=lf
+
+# Binarios
+*.png binary
+*.jpg binary
+*.ico binary
+
+# Marcas para GitHub (no inflar diffs/estadísticas de lenguaje)
+package-lock.json linguist-generated=true
+lib/shirt-names-data.ts linguist-generated=true
+lib/data/* linguist-generated=true
