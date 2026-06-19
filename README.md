@@ -161,11 +161,25 @@ El repositorio usa dos ramas protegidas por _rulesets_:
 Ciclo de un cambio:
 
 1. Ramificar desde `staging` (`git switch -c feat/mi-cambio`).
-2. Implementar y verificar local: `npm run lint && npm run typecheck && npm run build`.
-3. Abrir un **PR hacia `staging`**; al pasar el CI, _squash & merge_.
-4. Promover a `main` reflejando staging: `git merge --squash staging` + commit + push, y taggear (`vX.Y.Z`).
+2. Implementar y verificar local: `npm run format:check && npm run lint && npm run typecheck && npm run build`.
+3. Abrir un **PR hacia `staging`**; al pasar el CI (`build`), _squash & merge_.
+4. Promover a `main` **snapshoteando el árbol de `staging`** (no hacer `merge` — ver la nota) y taggear:
 
-Un workflow **Guard main** verifica que el contenido de `main` coincida con `staging` tras cada promote.
+```bash
+git switch main && git pull --ff-only origin main
+git read-tree --reset -u origin/staging   # main = árbol EXACTO de staging
+git commit -m "Staging to main: <descripción> + vX.Y.Z"
+git push origin main
+git tag -a vX.Y.Z -m "<descripción>" && git push origin vX.Y.Z
+```
+
+> **Por qué `read-tree` y no `git merge --squash`:** el merge se calcula contra el merge-base y puede
+> dejar hunks "solo-main" o, en archivos reformateados en bloque, **duplicar** contenido sin marcar
+> conflicto (rompería el build). `git read-tree --reset -u origin/staging` deja el árbol de `main`
+> **idéntico** a `staging` (altas, bajas y cambios), de forma determinista.
+
+Un workflow **Guard main** valida tras cada push que el contenido de `main` coincida exactamente con
+`staging` (`git diff` vacío).
 Se usa [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `refactor:`,
 `docs:`, `style:`, `chore:`).
 
