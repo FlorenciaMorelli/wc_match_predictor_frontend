@@ -1258,55 +1258,6 @@ export default function PredictionResult({
       })
     : null;
 
-  // Comentario "cómo estuvo el partido" para finalizados, sintetizado de los datos
-  // reales (marcador + xG + probabilidad del modelo): desenlace + carácter (goleada /
-  // por la mínima / muchos goles) + relación con el pronóstico. Se arma en es/en vía
-  // i18n, sin fuentes externas, y reemplaza la narrativa predictiva del backend (que
-  // post-partido lee mal). Sin marcador válido (compare=false) → cae a la narrativa.
-  let matchSummary: string | null = null;
-  if (compare) {
-    const s = t.result.summary;
-    const winner = outcome === "a" ? team_a_es : outcome === "b" ? team_b_es : null;
-    const loser = outcome === "a" ? team_b_es : outcome === "b" ? team_a_es : null;
-    const gf = Math.max(actualA, actualB);
-    const ga = Math.min(actualA, actualB);
-    const total = actualA + actualB;
-    const margin = Math.abs(actualA - actualB);
-
-    const base = winner ? s.win(winner, loser!, gf, ga) : s.draw(team_a_es, team_b_es, actualA);
-    const character =
-      winner && margin >= 3
-        ? s.blowout
-        : winner && margin === 1
-        ? s.narrow
-        : total >= 4
-        ? s.highScoring
-        : "";
-    const expectation = isUpset
-      ? s.surprise(formatPct(actualOutcomeProb))
-      : actualOutcomeProb >= 0.5
-      ? s.expected
-      : "";
-
-    const first = character ? `${base} ${character}` : base;
-    matchSummary = expectation ? `${first}. ${expectation}.` : `${first}.`;
-  }
-
-  // Crónica completa (ESPN + reglas) cuando hay datos del partido; si no, la síntesis
-  // local de arriba; y si tampoco, la narrativa predictiva del backend.
-  const activeReport = report && report.key === reportKey ? report.data : null;
-  const reportText = activeReport
-    ? buildMatchReport(locale, {
-        ft: activeReport.ft,
-        ht: activeReport.ht,
-        goals: activeReport.goals,
-        teamA: team_a_es,
-        teamB: team_b_es,
-        outcomeProb: actualOutcomeProb,
-        isUpset,
-      })
-    : null;
-
   // El "resultado más probable" debe respetar el marcador más probable:
   // si el top scoreline es un empate (p. ej. 0–0), el titular es Empate,
   // aunque el agregado 1X2 favorezca a un equipo. Sin scoreline, caemos al 1X2.
