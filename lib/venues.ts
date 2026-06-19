@@ -43,7 +43,10 @@ const VENUE_CITY: Record<string, { es: string; en: string }> = {
  * estadio no está en el mapa (estadio nuevo/renombrado por el backend). El
  * llamador degrada mostrando sólo el estadio; nunca rompe el layout.
  */
-export function cityForVenue(venue: string | null | undefined, locale: Locale): string | null {
+export function cityForVenue(
+  venue: string | null | undefined,
+  locale: Locale
+): string | null {
   if (!venue) return null;
   return VENUE_CITY[venue.trim()]?.[locale] ?? null;
 }

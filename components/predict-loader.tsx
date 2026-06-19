@@ -31,24 +31,34 @@ export default function PredictLoader({ flagA, nameA, flagB, nameB }: Props) {
       {(flagA || flagB) && (
         <div className="flex items-center gap-4">
           {flagA && (
-            <FlagImage iso2={flagA} name={nameA ?? ""} size="md" className="shadow-sm" />
+            <FlagImage
+              iso2={flagA}
+              name={nameA ?? ""}
+              size="md"
+              className="shadow-sm"
+            />
           )}
           <span className="animate-bounce text-2xl" aria-hidden>
             ⚽
           </span>
           {flagB && (
-            <FlagImage iso2={flagB} name={nameB ?? ""} size="md" className="shadow-sm" />
+            <FlagImage
+              iso2={flagB}
+              name={nameB ?? ""}
+              size="md"
+              className="shadow-sm"
+            />
           )}
         </div>
       )}
 
       <div className="min-h-[3rem]">
-        <p className="text-sm font-semibold text-ink">
+        <p className="text-ink text-sm font-semibold">
           {t.predictor.loadingTitle}
         </p>
         <p
           key={step}
-          className="mt-1 text-sm text-ink-muted duration-500 animate-in fade-in"
+          className="text-ink-muted animate-in fade-in mt-1 text-sm duration-500"
         >
           {steps[step]}
         </p>
@@ -58,7 +68,7 @@ export default function PredictLoader({ flagA, nameA, flagB, nameB }: Props) {
         {[0, 1, 2].map((i) => (
           <span
             key={i}
-            className="h-2 w-2 animate-bounce rounded-full bg-brand"
+            className="bg-brand h-2 w-2 animate-bounce rounded-full"
             style={{ animationDelay: `${i * 150}ms` }}
           />
         ))}

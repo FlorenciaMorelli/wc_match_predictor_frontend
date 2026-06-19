@@ -53,7 +53,8 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     });
   } catch (e) {
     // TimeoutError (AbortSignal.timeout) → lento; cualquier otro rechazo → sin red.
-    if (e instanceof DOMException && e.name === "TimeoutError") throw new ApiError("slow");
+    if (e instanceof DOMException && e.name === "TimeoutError")
+      throw new ApiError("slow");
     throw new ApiError("offline");
   }
 
@@ -63,7 +64,9 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     const detail = await res.json().catch(() => ({ detail: res.statusText }));
     throw new ApiError(
       "server",
-      typeof detail.detail === "string" ? detail.detail : JSON.stringify(detail.detail)
+      typeof detail.detail === "string"
+        ? detail.detail
+        : JSON.stringify(detail.detail)
     );
   }
 
@@ -149,7 +152,8 @@ export async function predictMatch(
         signal: AbortSignal.timeout(PREDICT_TIMEOUT_MS),
       });
     } catch (e) {
-      if (e instanceof DOMException && e.name === "TimeoutError") throw new ApiError("slow");
+      if (e instanceof DOMException && e.name === "TimeoutError")
+        throw new ApiError("slow");
       throw new ApiError("offline");
     }
 
@@ -164,7 +168,9 @@ export async function predictMatch(
       const detail = await res.json().catch(() => ({ detail: res.statusText }));
       throw new ApiError(
         "server",
-        typeof detail.detail === "string" ? detail.detail : JSON.stringify(detail.detail)
+        typeof detail.detail === "string"
+          ? detail.detail
+          : JSON.stringify(detail.detail)
       );
     }
 

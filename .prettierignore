@@ -1,0 +1,15 @@
+# Dependencias y lockfile (generado)
+node_modules/
+package-lock.json
+
+# Build / outputs de Next
+.next/
+out/
+next-env.d.ts
+
+# Datos y módulos generados (tienen su propio formato determinista)
+lib/shirt-names-data.ts
+lib/data/
+
+# Misc
+*.tsbuildinfo

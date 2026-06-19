@@ -31,8 +31,10 @@ export async function POST(req: NextRequest) {
   // Esto evita que MyMemory traduzca nombres propios (p. ej. "Costa de Marfil"
   // → "Ivory Coast") cuando queremos conservar el nombre canónico del sistema.
   let textToTranslate = key;
-  if (termA?.src) textToTranslate = textToTranslate.replaceAll(termA.src, TOKEN_A);
-  if (termB?.src) textToTranslate = textToTranslate.replaceAll(termB.src, TOKEN_B);
+  if (termA?.src)
+    textToTranslate = textToTranslate.replaceAll(termA.src, TOKEN_A);
+  if (termB?.src)
+    textToTranslate = textToTranslate.replaceAll(termB.src, TOKEN_B);
 
   try {
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(textToTranslate)}&langpair=es|en`;

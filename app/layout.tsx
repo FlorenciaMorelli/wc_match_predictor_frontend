@@ -35,7 +35,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`h-full antialiased ${archivo.variable}`} suppressHydrationWarning>
+    <html
+      lang="es"
+      className={`h-full antialiased ${archivo.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         {/* Prevent dark-mode flash: set class before React hydrates */}
         <script
@@ -44,7 +48,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="flex min-h-full flex-col">
         <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>

@@ -49,7 +49,11 @@ export function formatLocalTime(
 }
 
 /** "GMT-3" / "ART" — short name of the viewer's local timezone at kickoff. */
-export function localTimeZoneName(date: string, locale: string, timeUtc = "12:00"): string {
+export function localTimeZoneName(
+  date: string,
+  locale: string,
+  timeUtc = "12:00"
+): string {
   // Resolve the zone name at the actual kickoff instant when we have one, so it
   // stays correct across DST boundaries; fall back to local noon otherwise.
   const d = matchKickoff(date, normalizeUtcTime(timeUtc) ? timeUtc : "12:00");

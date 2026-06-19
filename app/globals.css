@@ -70,29 +70,31 @@
 }
 
 :root {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
 
   /* ── WC2026 brand palette ───────────────────────────────────────────
      Refined neutral base + navy primary + warm gold highlight, plus the
      three host-nation accent colors (Canada red / Mexico green / USA blue)
      used sparingly as the WC2026 identity signature. */
-  --canvas: #f8f7f5;      /* page background */
-  --surface: #ffffff;     /* cards, panels */
-  --line: #e8e6e1;        /* borders, dividers */
-  --ink: #1b1b1b;         /* primary text */
-  --ink-muted: #6b6b6b;   /* secondary text */
-  --ink-subtle: #a8a29e;  /* labels, captions */
-  --brand: #183a70;       /* navy — primary actions */
+  --canvas: #f8f7f5; /* page background */
+  --surface: #ffffff; /* cards, panels */
+  --line: #e8e6e1; /* borders, dividers */
+  --ink: #1b1b1b; /* primary text */
+  --ink-muted: #6b6b6b; /* secondary text */
+  --ink-subtle: #a8a29e; /* labels, captions */
+  --brand: #183a70; /* navy — primary actions */
   --brand-hover: #224989;
-  --brand-soft: #eef2f9;  /* navy tint — soft backgrounds */
-  --gold: #c9a84c;        /* highlight — most likely result */
+  --brand-soft: #eef2f9; /* navy tint — soft backgrounds */
+  --gold: #c9a84c; /* highlight — most likely result */
   --gold-soft: #faf3e0;
-  --danger: #c95863;      /* errors, live indicator */
+  --danger: #c95863; /* errors, live indicator */
   --danger-soft: #faedef;
-  --wc-red: #e4002b;      /* Canada */
-  --wc-green: #009a44;    /* Mexico */
-  --wc-blue: #0050b5;     /* USA */
+  --wc-red: #e4002b; /* Canada */
+  --wc-green: #009a44; /* Mexico */
+  --wc-blue: #0050b5; /* USA */
   /* Result visualization — team A / draw / team B */
   --result-a: #1d4ed8;
   --result-b: #b91c1c;
@@ -139,15 +141,15 @@
   --canvas: #0d1117;
   --surface: #161b22;
   --line: #30363d;
-  --ink: #cdd3da;        /* 82% white — editorial sweet spot, ~9:1 contrast */
+  --ink: #cdd3da; /* 82% white — editorial sweet spot, ~9:1 contrast */
   --ink-muted: #8b949e;
   --ink-subtle: #6e7681;
   --brand: #4a7bca;
   --brand-hover: #5a8bd8;
   --brand-soft: #112040;
-  --gold: #d4a84c;       /* same as light mode — warm, not electric */
+  --gold: #d4a84c; /* same as light mode — warm, not electric */
   --gold-soft: #231905;
-  --danger: #e06060;     /* muted coral — readable without shouting */
+  --danger: #e06060; /* muted coral — readable without shouting */
   --danger-soft: #2d0f0e;
   /* Result visualization — desaturated for dark bg comfort */
   --result-a: #5b89c4;
@@ -226,7 +228,9 @@
 /* Smooth theme transitions — only on non-motion-sensitive properties */
 @media (prefers-reduced-motion: no-preference) {
   html {
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
   }
 }
 

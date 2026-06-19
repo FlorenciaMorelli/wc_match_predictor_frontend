@@ -69,7 +69,7 @@ export const es: Translations = {
       programado: "Programado",
       STATUS_FULL_TIME: "Finalizado",
       STATUS_FIRST_HALF: "Primer tiempo",
-      STATUS_SECOND_HALF: "Segundo tiempo"
+      STATUS_SECOND_HALF: "Segundo tiempo",
     },
   },
   predictor: {
@@ -151,11 +151,14 @@ export const es: Translations = {
     metricsTitle: "Qué tan acertado fue",
     metrics: {
       winner: "Acierto de ganador",
-      winnerHelp: "Partidos donde el desenlace más probable (1X2) coincidió con el real.",
+      winnerHelp:
+        "Partidos donde el desenlace más probable (1X2) coincidió con el real.",
       brier: "Brier score",
-      brierHelp: "Calibración de las probabilidades (0 = perfecto, menor es mejor).",
+      brierHelp:
+        "Calibración de las probabilidades (0 = perfecto, menor es mejor).",
       exact: "Marcador exacto",
-      exactHelp: "Partidos donde el marcador más probable coincidió con el real.",
+      exactHelp:
+        "Partidos donde el marcador más probable coincidió con el real.",
       matches: "Partidos evaluados",
       matchesHelp: "Finalizados con marcador, usados en el cálculo.",
     },
@@ -202,13 +205,16 @@ export const es: Translations = {
     penaltiesProbability: "Probabilidad de definición por penales:",
     analysis: "Análisis",
     summary: {
-      win: (winner, loser, gf, ga) => `${winner} se impuso ${gf}-${ga} a ${loser}`,
-      draw: (teamA, teamB, goals) => `${teamA} y ${teamB} igualaron ${goals}-${goals}`,
+      win: (winner, loser, gf, ga) =>
+        `${winner} se impuso ${gf}-${ga} a ${loser}`,
+      draw: (teamA, teamB, goals) =>
+        `${teamA} y ${teamB} igualaron ${goals}-${goals}`,
       blowout: "con una goleada",
       narrow: "por la mínima",
       highScoring: "en un partido de muchos goles",
       expected: "En línea con el pronóstico del modelo",
-      surprise: (prob) => `Un desenlace que el modelo veía poco probable (${prob})`,
+      surprise: (prob) =>
+        `Un desenlace que el modelo veía poco probable (${prob})`,
     },
     goalsHeading: "Goles",
     penaltyTag: "P",
@@ -235,7 +241,8 @@ export const es: Translations = {
           teamBMore ? "encima" : "debajo"
         }`,
       scoreTop: "El resultado fue el marcador más probable",
-      scoreRanked: (rank) => `El resultado fue el ${rank}º marcador más probable`,
+      scoreRanked: (rank) =>
+        `El resultado fue el ${rank}º marcador más probable`,
       scoreOutside: "El resultado no estaba entre los 8 más probables",
     },
   },
@@ -246,7 +253,13 @@ export const es: Translations = {
       title: "Despertando el servidor",
       body: "Estaba en reposo. Esperá unos segundos y reintentá.",
     },
-    slow: { title: "Tardó demasiado", body: "El servidor está lento. Reintentá en un momento." },
-    server: { title: "Algo salió mal", body: "Tuvimos un problema. Reintentá." },
+    slow: {
+      title: "Tardó demasiado",
+      body: "El servidor está lento. Reintentá en un momento.",
+    },
+    server: {
+      title: "Algo salió mal",
+      body: "Tuvimos un problema. Reintentá.",
+    },
   },
 };
