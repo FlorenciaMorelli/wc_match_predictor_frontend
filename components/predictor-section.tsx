@@ -8,7 +8,8 @@ import ModelPicker, { type Model } from "./model-picker";
 import PredictionResult from "./prediction-result";
 import PredictLoader from "./predict-loader";
 import ConnectionError from "./connection-error";
-import { fetchTeams, predictMatch, toApiError, type ApiError } from "@/lib/api";
+import { fetchTeams, toApiError, type ApiError } from "@/lib/api";
+import { cachedPredict, MAX_UPCOMING_TTL_MS } from "@/lib/prediction-cache";
 import { useLanguage, teamName } from "@/lib/i18n";
 
 export default function PredictorSection() {
@@ -47,13 +48,18 @@ export default function PredictorSection() {
     setError(null);
     setResult(null);
     try {
-      const res = await predictMatch({
-        team_a_id: teamA.id,
-        team_b_id: teamB.id,
-        date: matchDate,
-        knockout,
-        model,
-      });
+      const res = await cachedPredict(
+        {
+          team_a_id: teamA.id,
+          team_b_id: teamB.id,
+          date: matchDate,
+          knockout,
+          model,
+        },
+        // Predictor manual: fecha arbitraria sin hora de partido → TTL plano (6 h).
+        // Re-correr el mismo cruce dentro de ese lapso es instantáneo.
+        MAX_UPCOMING_TTL_MS
+      );
       setResult(res);
       setTimeout(() => {
         document

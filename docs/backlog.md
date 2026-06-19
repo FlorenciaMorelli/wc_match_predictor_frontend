@@ -492,6 +492,39 @@ Comandos los corre el usuario (Git Bash).
 
 ---
 
+## Caché persistente de predicciones — performance (✅ HECHO · `perf/prediction-cache` · `v0.9.0`)
+
+**Origen (jun 2026):** cada predicción se recalculaba contra el backend (Render) en cada visita
+(cold-start ~150 s). `/eval` lo sufría más porque dispara todas las simulaciones de los finalizados a
+la vez. La única caché existente era la de `/eval`, **aislada** (guardaba un `MatchEval` derivado con
+clave `model:id:score`) y no compartida con el resto de la app.
+
+**Decisión (Solution Architect):** una **única caché persistente compartida** de `PredictResponse` en
+`localStorage` (`lib/prediction-cache.ts`), consumida por los tres llamadores. Clave canónica = tupla
+del request con defaults rellenados (`model ?? dixon_coles`, `knockout ?? false`, `date ?? hoy`), así
+una predicción hecha en cualquier lado sirve a los demás (el fixture pre-calienta `/eval`, y viceversa).
+El orden A↔B no se ordena (modelo asimétrico); el marcador no entra en la clave. `localStorage` (no
+IndexedDB): volumen acotado (~1–2 MB), patrón ya usado. Cota LRU (`MAX_ENTRIES` 300) + manejo de
+`QuotaExceededError`; guard SSR; clave versionada (`wc-predict:v1:`); degradación elegante.
+
+**Frescura (FA):** RF: finalizados → **permanente** (inmutables); próximos → TTL **consciente del
+inicio** (`upcomingFreshness`): lejos del partido la entrada expira al entrar a la ventana de
+confirmación del XI (`kickoff − 90 min`, tope 6 h), y dentro de esa ventana / en vivo usa TTL corto
+(~5 min) para captar el XI confirmado; predictor manual (sin hora) → TTL plano 6 h. RNF: sin nuevas
+dependencias, SSR-safe, sin tocar backend, lógica pura testeable. **Aceptación:** reabrir/recargar no
+re-pide mientras esté fresco; 2ª visita a `/eval` resuelve todo desde caché; cambiar de modelo solo
+pide lo no cacheado; cerca del inicio la 1ª apertura recalcula y trae el XI; sin `localStorage` la app
+funciona igual.
+
+**Dev:** `lib/prediction-cache.ts` (NUEVO: `cachedPredict` + helpers puros `predictionCacheKey`,
+`isEntryFresh`, `upcomingFreshness`, `selectEvictions`) + `lib/prediction-cache.test.ts` (NUEVO);
+cableado en `app/eval/page.tsx` (`"permanent"`, deriva de la respuesta completa, purga la caché vieja),
+`components/fixture-section.tsx` (`upcomingFreshness` con `matchKickoff`) y
+`components/predictor-section.tsx` (TTL plano). **Diferido:** stale-while-revalidate (refetch en
+segundo plano) — el TTL simple alcanza para esta escala.
+
+---
+
 ## Deuda técnica diferida (opcional)
 
 Estado tras la pasada de profesionalización (`v0.7.1`–`v0.8.0`):
