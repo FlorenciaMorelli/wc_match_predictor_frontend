@@ -5,6 +5,16 @@ Todos los cambios relevantes de este proyecto se documentan acá.
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 adhiere a [SemVer](https://semver.org/lang/es/). Cada versión corresponde a un tag `vX.Y.Z`.
 
+## [0.8.0] — 2026-06-19
+
+### Added
+
+- **Suite de tests** con Vitest sobre la lógica pura (`lib/model-eval`, `lib/text`, `lib/kits`,
+  `lib/country-codes`); scripts `test` / `test:watch` y step de tests en el CI.
+- **Gobernanza:** `CONTRIBUTING.md`, plantillas de PR e Issues, y `dependabot.yml` (npm + GitHub Actions).
+- **Consistencia de entorno:** `.gitattributes` (normaliza fin de línea a LF), `.editorconfig` y `.nvmrc`.
+- Badges de CI y licencia en el `README`.
+
 ## [0.7.3] — 2026-06-19
 
 ### Changed
@@ -110,6 +120,7 @@ adhiere a [SemVer](https://semver.org/lang/es/). Cada versión corresponde a un 
 > El historial previo a `0.2.0` (narrativa traducida es→en, sede neutral i18n y la base de la app)
 > está en el log de git.
 
+[0.8.0]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.7.3...v0.8.0
 [0.7.3]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.7.0...v0.7.1

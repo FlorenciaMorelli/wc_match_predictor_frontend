@@ -494,14 +494,13 @@ Comandos los corre el usuario (Git Bash).
 
 ## Deuda técnica diferida (opcional)
 
-Lo único pendiente tras cerrar el roadmap 1–11. Son mejoras de mantenibilidad/higiene, sin impacto
-funcional; se difieren con criterio (no hay _pain_ actual y evitan churn sobre código estable).
+Estado tras la pasada de profesionalización (`v0.7.1`–`v0.8.0`):
 
-- **Split de `components/prediction-result.tsx` (~1.4k líneas).** Extraer a módulos: camiseta/`JerseyIcon`
-  - render de kits, cancha/formación (`SinglePitch`/`PlayerNode`), lista de goles (`MatchGoals`) y bloque
-    1X2/comparación. Mejora la navegabilidad; riesgo medio (diff grande), por eso se difiere.
-- **Formateo Prettier en CI.** El repo no está 100% alineado con `.prettierrc` (~57 archivos). Adoptarlo
-  implica un reformat masivo: conviene un PR aislado `style/prettier-format` (diff "solo formato") y recién
-  ahí sumar `format:check` al workflow de CI. Hoy el CI corre `lint` + `typecheck` + `build`.
-- **Tests automatizados.** No hay suite. Candidatos de alto valor y bajo costo: unit tests de helpers puros
-  (`lib/model-eval.ts`, `lib/text.ts`, `lib/kits.ts` `resolveKits`/`shirtToKit`).
+- ✅ **Formateo Prettier en CI** — hecho en `v0.7.2` (`format:check` gateado).
+- ✅ **Tests automatizados** — hecho en `v0.8.0` (Vitest sobre `model-eval`, `text`, `kits`, `country-codes`).
+- ⏳ **Split de `components/prediction-result.tsx` (~1.4k líneas).** Único item abierto. Extraer a módulos:
+  camiseta/`JerseyIcon` + render de kits, cancha/formación (`SinglePitch`/`PlayerNode`), lista de goles
+  (`MatchGoals`) y bloque 1X2/comparación. **Diferido con criterio:** es código que funciona y está bien
+  comentado; fragmentarlo es churn de riesgo medio sin un driver de mantenibilidad concreto. Hacerlo solo si
+  aparece la necesidad (p. ej. cambios frecuentes en esa zona), como extracción mecánica pura validada por
+  `typecheck` + `test` + `build`.

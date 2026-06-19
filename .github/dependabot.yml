@@ -1,0 +1,24 @@
+version: 2
+updates:
+  # Dependencias npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      # Agrupa actualizaciones menores/patch en un solo PR para reducir ruido.
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Actualizaciones de las GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(ci)"
