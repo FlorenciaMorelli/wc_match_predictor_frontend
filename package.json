@@ -1,6 +1,6 @@
 {
   "name": "wc-match-predictor-frontend",
-  "version": "0.7.3",
+  "version": "0.8.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "format:check": "prettier --check .",
     "format": "prettier --write ."
   },
@@ -30,7 +32,8 @@
     "prettier": "^3.8.4",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.9"
   },
   "engines": {
     "node": ">=22",
