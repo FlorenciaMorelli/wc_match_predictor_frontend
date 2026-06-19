@@ -5,6 +5,23 @@ Todos los cambios relevantes de este proyecto se documentan acá.
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 adhiere a [SemVer](https://semver.org/lang/es/). Cada versión corresponde a un tag `vX.Y.Z`.
 
+## [0.9.0] — 2026-06-19
+
+### Added
+
+- **Caché persistente y compartida de predicciones** (`lib/prediction-cache.ts`): cada `PredictResponse`
+  se guarda en `localStorage` y se reutiliza entre visitas, recargas y los tres puntos que consultan al
+  predictor (fixture, predictor manual, `/eval`) — una predicción hecha en uno sirve a los demás (misma
+  tupla de request → misma clave). Acelera la carga, sobre todo en `/eval`, que evalúa todos los partidos
+  finalizados a la vez.
+
+### Changed
+
+- Frescura por proximidad al inicio: los finalizados se cachean permanentemente (inmutables); los próximos
+  expiran al entrar a la ventana de confirmación del XI (~90 min antes) y desde ahí usan un TTL corto, para
+  captar la alineación confirmada. `/eval` deriva sus métricas de la respuesta completa cacheada, en
+  reemplazo de su caché aislada anterior (`wc-eval:v1:*`, que se purga al montar).
+
 ## [0.8.1] — 2026-06-19
 
 ### Changed
@@ -127,6 +144,7 @@ adhiere a [SemVer](https://semver.org/lang/es/). Cada versión corresponde a un 
 > El historial previo a `0.2.0` (narrativa traducida es→en, sede neutral i18n y la base de la app)
 > está en el log de git.
 
+[0.9.0]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.8.1...v0.9.0
 [0.8.1]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.7.3...v0.8.0
 [0.7.3]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.7.2...v0.7.3
