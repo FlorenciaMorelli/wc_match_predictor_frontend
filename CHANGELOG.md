@@ -5,6 +5,13 @@ Todos los cambios relevantes de este proyecto se documentan acá.
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 adhiere a [SemVer](https://semver.org/lang/es/). Cada versión corresponde a un tag `vX.Y.Z`.
 
+## [0.8.1] — 2026-06-19
+
+### Changed
+
+- Dependabot apunta a `staging` (`target-branch`) en vez de `main`, para que las actualizaciones entren
+  por el flujo normal (PR → CI → staging) y no rompan el invariante `main == staging` del Guard main.
+
 ## [0.8.0] — 2026-06-19
 
 ### Added
@@ -120,6 +127,7 @@ adhiere a [SemVer](https://semver.org/lang/es/). Cada versión corresponde a un 
 > El historial previo a `0.2.0` (narrativa traducida es→en, sede neutral i18n y la base de la app)
 > está en el log de git.
 
+[0.8.1]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.7.3...v0.8.0
 [0.7.3]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.7.1...v0.7.2
