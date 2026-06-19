@@ -3,12 +3,8 @@
 import { useState, useEffect, useId, useRef, useCallback } from "react";
 import { CalendarDays } from "lucide-react";
 import type { FixtureMatch, MatchStatus, PredictResponse } from "@/types";
-import {
-  fetchFixture,
-  predictMatch,
-  toApiError,
-  type ApiError,
-} from "@/lib/api";
+import { fetchFixture, toApiError, type ApiError } from "@/lib/api";
+import { cachedPredict, upcomingFreshness } from "@/lib/prediction-cache";
 import PredictionResult from "./prediction-result";
 import PredictLoader from "./predict-loader";
 import ConnectionError from "./connection-error";
@@ -278,11 +274,21 @@ function MatchCard({ match }: { match: FixtureMatch }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await predictMatch({
-        team_a_id: match.team_a_id,
-        team_b_id: match.team_b_id,
-        date: match.date,
-      });
+      const res = await cachedPredict(
+        {
+          team_a_id: match.team_a_id,
+          team_b_id: match.team_b_id,
+          date: match.date,
+        },
+        // Finalizado → permanente (inmutable). Si no, TTL por proximidad al inicio: el XI
+        // se confirma ~90 min antes, así que cerca del partido se refresca seguido.
+        isFinished
+          ? "permanent"
+          : upcomingFreshness(
+              Date.now(),
+              matchKickoff(match.date, match.time_utc)?.getTime() ?? null
+            )
+      );
       setPrediction(res);
     } catch (e) {
       setError(toApiError(e));

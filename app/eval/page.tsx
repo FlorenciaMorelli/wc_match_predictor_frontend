@@ -5,12 +5,8 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { FixtureMatch } from "@/types";
 import type { ModelKey } from "@/locales/types";
-import {
-  fetchFixture,
-  predictMatch,
-  toApiError,
-  type ApiError,
-} from "@/lib/api";
+import { fetchFixture, toApiError, type ApiError } from "@/lib/api";
+import { cachedPredict, purgeLegacy } from "@/lib/prediction-cache";
 import { summarize, type MatchEval } from "@/lib/model-eval";
 import { useLanguage } from "@/lib/i18n";
 import Logo from "@/components/logo";
@@ -30,53 +26,30 @@ const FINISHED = new Set<string>(["finalizado", "STATUS_FULL_TIME"]);
 // Cuántos predicts en paralelo. Bajo para no saturar el backend (Render) ni el navegador.
 const CONCURRENCY = 4;
 
-// Caché por (modelo, partido, marcador) en localStorage: un partido finalizado y su
-// predicción no cambian, así que no se recalcula entre visitas ni al cambiar de modelo.
-const CACHE_PREFIX = "wc-eval:v1:";
-
-function cacheKey(model: ModelKey, m: FixtureMatch): string {
-  return `${CACHE_PREFIX}${model}:${m.id}:${m.score_a}-${m.score_b}`;
-}
-
-function readCache(key: string): MatchEval | null {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as MatchEval) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeCache(key: string, value: MatchEval): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // localStorage lleno o deshabilitado: seguimos sin cachear.
-  }
-}
-
 function isIntScore(s: string): boolean {
   return Number.isInteger(Number.parseInt(s, 10));
 }
 
-// Evalúa un partido: cache → predict → MatchEval. Falla individual → null (se omite).
+// Evalúa un partido finalizado: caché compartida → predict → MatchEval. La predicción es
+// inmutable (finalizado) → caché permanente; el marcador real se lee fresco del fixture,
+// no de la caché. Falla individual → null (se omite del agregado).
 async function evalOne(
   m: FixtureMatch,
   model: ModelKey
 ): Promise<MatchEval | null> {
-  const key = cacheKey(model, m);
-  const cached = readCache(key);
-  if (cached) return cached;
   try {
-    const res = await predictMatch({
-      team_a_id: m.team_a_id,
-      team_b_id: m.team_b_id,
-      date: m.date,
-      knockout: false,
-      model,
-    });
+    const res = await cachedPredict(
+      {
+        team_a_id: m.team_a_id,
+        team_b_id: m.team_b_id,
+        date: m.date,
+        knockout: false,
+        model,
+      },
+      "permanent"
+    );
     const top = res.top_scorelines?.[0];
-    const ev: MatchEval = {
+    return {
       id: m.id,
       pA: res.p_a,
       pDraw: res.p_draw,
@@ -86,8 +59,6 @@ async function evalOne(
       actualA: Number.parseInt(m.score_a, 10),
       actualB: Number.parseInt(m.score_b, 10),
     };
-    writeCache(key, ev);
-    return ev;
   } catch {
     return null;
   }
@@ -156,6 +127,11 @@ export default function EvalPage() {
   useEffect(() => {
     run();
   }, [run]);
+
+  // Limpia la caché aislada anterior de /eval (superada por la caché compartida).
+  useEffect(() => {
+    purgeLegacy("wc-eval:v1:");
+  }, []);
 
   function selectModel(m: ModelKey) {
     if (m === model) return;
