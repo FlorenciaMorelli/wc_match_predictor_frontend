@@ -9,7 +9,11 @@ import {
   setLocale,
 } from "@/lib/locale";
 
-export default function LanguageProvider({ children }: { children: ReactNode }) {
+export default function LanguageProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const locale = useSyncExternalStore(
     subscribeLocale,
     getLocaleSnapshot,

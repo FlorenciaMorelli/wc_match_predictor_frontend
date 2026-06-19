@@ -8,7 +8,8 @@ import { NextRequest, NextResponse } from "next/server";
 // lib/match-report. Robusto: ante cualquier problema → { found: false } y el cliente
 // cae a la síntesis/narrativa, sin romper el modal.
 
-const SUMMARY = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event=";
+const SUMMARY =
+  "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event=";
 
 type Competitor = {
   homeAway?: string;
@@ -30,16 +31,27 @@ type Goal = {
   owngoal: boolean;
   offset: number | null;
 };
-type Hit = { found: true; ft: [number, number]; ht: [number, number] | null; goals: Goal[] };
+type Hit = {
+  found: true;
+  ft: [number, number];
+  ht: [number, number] | null;
+  goals: Goal[];
+};
 type Miss = { found: false };
 
 // Caché por evento: un partido finalizado no cambia.
 const cache = new Map<string, Hit | Miss>();
 
 // "9'" → {9,null} · "45'+5'" → {45,5} · "90'+4'" → {90,4}.
-function parseClock(v: unknown): { minute: number | null; offset: number | null } {
+function parseClock(v: unknown): {
+  minute: number | null;
+  offset: number | null;
+} {
   const m = String(v ?? "").match(/(\d+)'?(?:\s*\+\s*(\d+))?/);
-  return { minute: m ? Number(m[1]) : null, offset: m && m[2] ? Number(m[2]) : null };
+  return {
+    minute: m ? Number(m[1]) : null,
+    offset: m && m[2] ? Number(m[2]) : null,
+  };
 }
 
 // Penal y gol en contra se detectan por el texto del tipo ("Penalty - Scored",
@@ -72,14 +84,20 @@ export async function POST(req: NextRequest) {
   const miss: Miss = { found: false };
 
   try {
-    const res = await fetch(`${SUMMARY}${encodeURIComponent(eventId)}`, { signal: AbortSignal.timeout(8_000) });
+    const res = await fetch(`${SUMMARY}${encodeURIComponent(eventId)}`, {
+      signal: AbortSignal.timeout(8_000),
+    });
     if (!res.ok) return NextResponse.json(miss);
     const data = await res.json();
 
-    const comps = data?.header?.competitions?.[0]?.competitors as Competitor[] | undefined;
-    if (!Array.isArray(comps) || comps.length !== 2) return NextResponse.json(miss);
+    const comps = data?.header?.competitions?.[0]?.competitors as
+      | Competitor[]
+      | undefined;
+    if (!Array.isArray(comps) || comps.length !== 2)
+      return NextResponse.json(miss);
 
-    const abbrOf = (c: Competitor) => String(c.team?.abbreviation ?? "").toUpperCase();
+    const abbrOf = (c: Competitor) =>
+      String(c.team?.abbreviation ?? "").toUpperCase();
     const idOf = (c: Competitor) => String(c.team?.id ?? "");
     const scoreOf = (c: Competitor) => {
       const n = Number.parseInt(String(c.score ?? ""), 10);
@@ -103,7 +121,9 @@ export async function POST(req: NextRequest) {
       [idOf(bComp), "b"],
     ]);
 
-    const events = (Array.isArray(data?.keyEvents) ? data.keyEvents : []) as KeyEvent[];
+    const events = (
+      Array.isArray(data?.keyEvents) ? data.keyEvents : []
+    ) as KeyEvent[];
     const goals: Goal[] = [];
     for (const k of events) {
       const typeText = String(k.type?.text ?? "");
@@ -122,7 +142,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Parcial (HT) derivado de los goles hasta el 45' (+ descuento de 1er tiempo).
-    const htOf = (side: "a" | "b") => goals.filter((g) => g.team === side && (g.minute ?? 99) <= 45).length;
+    const htOf = (side: "a" | "b") =>
+      goals.filter((g) => g.team === side && (g.minute ?? 99) <= 45).length;
 
     const hit: Hit = {
       found: true,

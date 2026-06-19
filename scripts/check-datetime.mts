@@ -24,10 +24,26 @@ const LOCALE = "es-AR";
 
 // Casos representativos (date + time_utc tal como los manda el backend).
 const matches = [
-  { date: "2026-06-12", time_utc: "19", label: "Canadá vs Bosnia (hora suelta)" },
-  { date: "2026-06-13", time_utc: "01", label: "USA vs Paraguay (madrugada UTC)" },
-  { date: "2026-06-20", time_utc: "00:30", label: "Brazil vs Haiti (cruza medianoche)" },
-  { date: "2026-06-15", time_utc: "", label: "Sin hora (debe quedar en blanco)" },
+  {
+    date: "2026-06-12",
+    time_utc: "19",
+    label: "Canadá vs Bosnia (hora suelta)",
+  },
+  {
+    date: "2026-06-13",
+    time_utc: "01",
+    label: "USA vs Paraguay (madrugada UTC)",
+  },
+  {
+    date: "2026-06-20",
+    time_utc: "00:30",
+    label: "Brazil vs Haiti (cruza medianoche)",
+  },
+  {
+    date: "2026-06-15",
+    time_utc: "",
+    label: "Sin hora (debe quedar en blanco)",
+  },
 ];
 
 const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;

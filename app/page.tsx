@@ -7,7 +7,7 @@ import Footer from "@/components/footer";
 export default function HomePage() {
   return (
     <>
-      <main className="min-h-screen bg-canvas text-ink">
+      <main className="bg-canvas text-ink min-h-screen">
         <Nav />
         <Hero />
         <PredictorSection />

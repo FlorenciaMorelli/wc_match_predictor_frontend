@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect, useId } from "react";
-import type { MatchStatus, PlayerSlot, PredictResponse, ScoreProbability } from "@/types";
+import type {
+  MatchStatus,
+  PlayerSlot,
+  PredictResponse,
+  ScoreProbability,
+} from "@/types";
 import FlagImage from "./flag-image";
 import { notableAbsences } from "@/lib/key-players";
 import { buildMatchReport, type ReportGoal } from "@/lib/match-report";
@@ -32,7 +37,7 @@ interface Props {
 
 const TEAM_A = "var(--result-a)";
 const TEAM_B = "var(--result-b)";
-const DRAW   = "var(--result-draw)";
+const DRAW = "var(--result-draw)";
 
 function scoreWinnerColor(a: number, b: number): string {
   if (a === b) return DRAW;
@@ -64,10 +69,13 @@ function WinnerLegend({ teamA, teamB }: { teamA: string; teamB: string }) {
     [TEAM_B, teamB],
   ];
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-muted">
+    <div className="text-ink-muted flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
       {items.map(([color, label]) => (
         <span key={label} className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full" style={{ background: color }} />
+          <span
+            className="h-2 w-2 rounded-full"
+            style={{ background: color }}
+          />
           {label}
         </span>
       ))}
@@ -106,14 +114,14 @@ function Scorelines({
     ? exactIdx === 0
       ? t.result.compare.scoreTop
       : exactIdx > 0
-      ? t.result.compare.scoreRanked(exactIdx + 1)
-      : t.result.compare.scoreOutside
+        ? t.result.compare.scoreRanked(exactIdx + 1)
+        : t.result.compare.scoreOutside
     : null;
 
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-ink-subtle">
+        <p className="text-ink-subtle text-xs font-semibold tracking-widest uppercase">
           {t.result.mostLikelyScores}
         </p>
         <WinnerLegend teamA={teamA} teamB={teamB} />
@@ -125,7 +133,7 @@ function Scorelines({
           return (
             <div
               key={i}
-              className={`relative flex flex-col items-center rounded-lg border border-line ${
+              className={`border-line relative flex flex-col items-center rounded-lg border ${
                 dense ? "px-1 py-2" : "px-2 py-3"
               } ${isActual ? "opacity-100" : compare ? "opacity-60" : ""}`}
               style={{
@@ -135,7 +143,7 @@ function Scorelines({
             >
               {isActual && (
                 <span
-                  className="absolute -top-2 rounded-full px-1.5 py-0.5 text-[0.5625rem] font-semibold leading-none"
+                  className="absolute -top-2 rounded-full px-1.5 py-0.5 text-[0.5625rem] leading-none font-semibold"
                   style={{ backgroundColor: color, color: "var(--canvas)" }}
                 >
                   {t.result.compare.actual}
@@ -147,7 +155,7 @@ function Scorelines({
               >
                 {s.score_a}–{s.score_b}
               </span>
-              <span className="mt-0.5 text-xs text-ink-subtle">
+              <span className="text-ink-subtle mt-0.5 text-xs">
                 {formatPct(s.probability)}
               </span>
             </div>
@@ -155,7 +163,9 @@ function Scorelines({
         })}
       </div>
       {precisionNote && (
-        <p className="mt-3 text-center text-xs text-ink-muted">{precisionNote}</p>
+        <p className="text-ink-muted mt-3 text-center text-xs">
+          {precisionNote}
+        </p>
       )}
     </div>
   );
@@ -176,7 +186,13 @@ const JERSEY_BODY =
 
 // Patrón del kit recortado a la silueta (clipPath). Cubre toda la viewBox: el recorte
 // se encarga de que solo aparezca dentro de la camiseta (mangas incluidas).
-function KitPatternFill({ pattern, color }: { pattern: KitPattern; color: string }) {
+function KitPatternFill({
+  pattern,
+  color,
+}: {
+  pattern: KitPattern;
+  color: string;
+}) {
   switch (pattern) {
     case "stripes": {
       // Rayas verticales (AR): barras alternas de ~2.4 de ancho.
@@ -184,7 +200,9 @@ function KitPatternFill({ pattern, color }: { pattern: KitPattern; color: string
       const bars = [];
       for (let x = 0, i = 0; x < 24; x += w, i++) {
         if (i % 2 === 1)
-          bars.push(<rect key={i} x={x} y={0} width={w} height={28} fill={color} />);
+          bars.push(
+            <rect key={i} x={x} y={0} width={w} height={28} fill={color} />
+          );
       }
       return <>{bars}</>;
     }
@@ -194,7 +212,9 @@ function KitPatternFill({ pattern, color }: { pattern: KitPattern; color: string
       const bars = [];
       for (let y = 0, i = 0; y < 28; y += h, i++) {
         if (i % 2 === 1)
-          bars.push(<rect key={i} x={0} y={y} width={24} height={h} fill={color} />);
+          bars.push(
+            <rect key={i} x={0} y={y} width={24} height={h} fill={color} />
+          );
       }
       return <>{bars}</>;
     }
@@ -212,7 +232,14 @@ function KitPatternFill({ pattern, color }: { pattern: KitPattern; color: string
         for (let c = 0, ci = 0; c < 24; c += s, ci++)
           if ((ri + ci) % 2 === 0)
             squares.push(
-              <rect key={`${ri}-${ci}`} x={c} y={r} width={s} height={s} fill={color} />,
+              <rect
+                key={`${ri}-${ci}`}
+                x={c}
+                y={r}
+                width={s}
+                height={s}
+                fill={color}
+              />
             );
       return <>{squares}</>;
     }
@@ -244,9 +271,13 @@ function JerseyIcon({
   // Cuerpo = color REAL del kit (España rojo, Cabo Verde azul, etc.). Arquero: color
   // designado por FIFA si se conoce (gkColor), si no dorado liso. La claridad del cuerpo
   // (para ribete/halo/dorsal) se decide por el primario (o el color del arquero).
-  const bodyColor = isGk ? gkColor ?? "var(--gold)" : kit.primary;
+  const bodyColor = isGk ? (gkColor ?? "var(--gold)") : kit.primary;
   const pattern: KitPattern = isGk ? "solid" : kit.pattern;
-  const lightBody = isGk ? (gkColor ? isLightColor(gkColor) : true) : isLightColor(kit.primary);
+  const lightBody = isGk
+    ? gkColor
+      ? isLightColor(gkColor)
+      : true
+    : isLightColor(kit.primary);
   // Ribete del cuello y puños: oscuro sobre cuerpo claro, blanco sobre cuerpo oscuro.
   const trimColor = lightBody ? "#1f2937" : "#ffffff";
   // En kits lisos, banda tonal sutil para dar textura de tela sin falsear el color.
@@ -335,8 +366,29 @@ function JerseyIcon({
 // abreviar (la convención Sofascore/FotMob muestra el apellido solo). Sin esto,
 // "Virgil van Dijk" se mostraba como "Dijk" y "Frenkie de Jong" como "Jong".
 const SURNAME_PARTICLES = new Set([
-  "van", "von", "der", "den", "ter", "ten", "de", "del", "della", "di", "da",
-  "dos", "das", "do", "la", "le", "bin", "ibn", "al", "el", "mac", "mc", "o'",
+  "van",
+  "von",
+  "der",
+  "den",
+  "ter",
+  "ten",
+  "de",
+  "del",
+  "della",
+  "di",
+  "da",
+  "dos",
+  "das",
+  "do",
+  "la",
+  "le",
+  "bin",
+  "ibn",
+  "al",
+  "el",
+  "mac",
+  "mc",
+  "o'",
 ]);
 
 // Apellido a mostrar: última palabra + las partículas que la preceden (multi-
@@ -385,7 +437,7 @@ function PlayerNode({
         isGk={isGk}
         gkColor={gkColor}
       />
-      <span className="font-display whitespace-nowrap rounded-[3px] bg-white/90 px-1 py-px text-center text-[0.6rem] font-bold leading-tight tracking-tight text-slate-900 shadow-sm sm:text-[0.68rem]">
+      <span className="font-display rounded-[3px] bg-white/90 px-1 py-px text-center text-[0.6rem] leading-tight font-bold tracking-tight whitespace-nowrap text-slate-900 shadow-sm sm:text-[0.68rem]">
         {surname}
       </span>
     </div>
@@ -410,16 +462,49 @@ function PlayerNode({
 // quedan entre centrales (10/12) y volantes (30/40): el corte por tamaños del
 // esquema decide si caen en una defensa de 5 (5-3-2) o en un medio de 5 (3-5-2).
 const ATTACKING_DEPTH: Record<string, number> = {
-  G: 0, GK: 0,
-  CD: 10, CB: 10, "CD-L": 10, "CD-R": 10, "CD-C": 10, SW: 10,
-  LB: 12, RB: 12,
-  LWB: 20, RWB: 20,
-  DM: 30, "DM-L": 30, "DM-R": 30, "DM-C": 30,
-  CM: 40, "CM-L": 40, "CM-R": 40, "CM-C": 40, LM: 40, RM: 40, M: 40,
-  AM: 50, "AM-L": 50, "AM-R": 50, "AM-C": 50, OM: 50, "OM-L": 50, "OM-R": 50,
-  LW: 60, RW: 60, WF: 60, "WF-L": 60, "WF-R": 60,
+  G: 0,
+  GK: 0,
+  CD: 10,
+  CB: 10,
+  "CD-L": 10,
+  "CD-R": 10,
+  "CD-C": 10,
+  SW: 10,
+  LB: 12,
+  RB: 12,
+  LWB: 20,
+  RWB: 20,
+  DM: 30,
+  "DM-L": 30,
+  "DM-R": 30,
+  "DM-C": 30,
+  CM: 40,
+  "CM-L": 40,
+  "CM-R": 40,
+  "CM-C": 40,
+  LM: 40,
+  RM: 40,
+  M: 40,
+  AM: 50,
+  "AM-L": 50,
+  "AM-R": 50,
+  "AM-C": 50,
+  OM: 50,
+  "OM-L": 50,
+  "OM-R": 50,
+  LW: 60,
+  RW: 60,
+  WF: 60,
+  "WF-L": 60,
+  "WF-R": 60,
   SS: 62,
-  CF: 70, "CF-L": 70, "CF-R": 70, "CF-C": 70, ST: 70, F: 70, FW: 70,
+  CF: 70,
+  "CF-L": 70,
+  "CF-R": 70,
+  "CF-C": 70,
+  ST: 70,
+  F: 70,
+  FW: 70,
 };
 
 function attackingDepth(pos: string | null): number {
@@ -468,7 +553,7 @@ function parseFormation(formation: string | null | undefined): number[] | null {
 function computeFormationLines(
   players: string[],
   formation: string | null | undefined,
-  detail: PlayerSlot[] | null | undefined,
+  detail: PlayerSlot[] | null | undefined
 ): RenderLine[] {
   if (detail && detail.length === 11) {
     const toLine = (slots: PlayerSlot[]): RenderLine => ({
@@ -483,10 +568,18 @@ function computeFormationLines(
 
     // Camino canónico: el string de formación define las líneas; ordenamos por
     // profundidad y cortamos por esos tamaños; cada línea se ordena izq→derecha.
-    if (gk.length === 1 && sizes && sizes.reduce((a, b) => a + b, 0) === outfield.length) {
+    if (
+      gk.length === 1 &&
+      sizes &&
+      sizes.reduce((a, b) => a + b, 0) === outfield.length
+    ) {
       const ordered = outfield
         .map((s, i) => ({ s, i }))
-        .sort((a, b) => attackingDepth(a.s.position) - attackingDepth(b.s.position) || a.i - b.i)
+        .sort(
+          (a, b) =>
+            attackingDepth(a.s.position) - attackingDepth(b.s.position) ||
+            a.i - b.i
+        )
         .map((x) => x.s);
 
       const lines: RenderLine[] = [toLine(gk)]; // [GK, DEF, …, FWD]
@@ -495,7 +588,11 @@ function computeFormationLines(
         const band = ordered
           .slice(k, k + size)
           .map((s, i) => ({ s, i }))
-          .sort((a, b) => horizontalOrder(a.s.position) - horizontalOrder(b.s.position) || a.i - b.i)
+          .sort(
+            (a, b) =>
+              horizontalOrder(a.s.position) - horizontalOrder(b.s.position) ||
+              a.i - b.i
+          )
           .map((x) => x.s);
         lines.push(toLine(band));
         k += size;
@@ -510,7 +607,9 @@ function computeFormationLines(
       bands[d === 0 ? 0 : d < 30 ? 1 : d < 60 ? 2 : 3].push(s);
     }
     bands.forEach((b) =>
-      b.sort((a, c) => horizontalOrder(a.position) - horizontalOrder(c.position)),
+      b.sort(
+        (a, c) => horizontalOrder(a.position) - horizontalOrder(c.position)
+      )
     );
     return bands
       .filter((b) => b.length > 0)
@@ -520,9 +619,21 @@ function computeFormationLines(
 
   if (players.length === 11) {
     return [
-      { names: players.slice(8, 11), jerseys: [null, null, null], positions: [null, null, null] },
-      { names: players.slice(5, 8), jerseys: [null, null, null], positions: [null, null, null] },
-      { names: players.slice(1, 5), jerseys: [null, null, null, null], positions: [null, null, null, null] },
+      {
+        names: players.slice(8, 11),
+        jerseys: [null, null, null],
+        positions: [null, null, null],
+      },
+      {
+        names: players.slice(5, 8),
+        jerseys: [null, null, null],
+        positions: [null, null, null],
+      },
+      {
+        names: players.slice(1, 5),
+        jerseys: [null, null, null, null],
+        positions: [null, null, null, null],
+      },
       { names: players.slice(0, 1), jerseys: [null], positions: [null] },
     ];
   }
@@ -555,7 +666,7 @@ function SinglePitch({
 
   if (lines.length === 0) {
     return (
-      <ol className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 rounded-xl bg-canvas px-4 py-3 text-sm text-ink-muted">
+      <ol className="bg-canvas text-ink-muted mt-3 grid grid-cols-2 gap-x-4 gap-y-1 rounded-xl px-4 py-3 text-sm">
         {players.map((name) => (
           <li key={name}>{name}</li>
         ))}
@@ -566,7 +677,7 @@ function SinglePitch({
   return (
     <div className="mt-3">
       <div
-        className="overflow-hidden rounded-xl border border-line shadow-md"
+        className="border-line overflow-hidden rounded-xl border shadow-md"
         style={{ perspective: "900px" }}
       >
         <div className="wc-tricolor h-1" />
@@ -592,7 +703,15 @@ function SinglePitch({
             fill="none"
           >
             {/* Borde de la mitad de cancha */}
-            <rect x="3" y="2" width="94" height="96" stroke="white" strokeOpacity="0.55" strokeWidth="0.8" />
+            <rect
+              x="3"
+              y="2"
+              width="94"
+              height="96"
+              stroke="white"
+              strokeOpacity="0.55"
+              strokeWidth="0.8"
+            />
             {/*
               Semicírculo del círculo central: centro en la línea de mediocampo (y=2),
               r=13. sweep=0 comba HACIA ADENTRO de la cancha (zona visible y>2),
@@ -600,29 +719,73 @@ function SinglePitch({
               hacia arriba, fuera del campo (por eso no se veía).
               Stroke grueso porque la perspectiva comprime esta zona visualmente.
             */}
-            <path d="M 37,2 A 13,13 0 0 0 63,2" stroke="white" strokeOpacity="0.7" strokeWidth="1.2" />
+            <path
+              d="M 37,2 A 13,13 0 0 0 63,2"
+              stroke="white"
+              strokeOpacity="0.7"
+              strokeWidth="1.2"
+            />
             {/* Área grande (portería propia, abajo) */}
-            <rect x="22" y="67" width="56" height="31" stroke="white" strokeOpacity="0.5" strokeWidth="0.7" fill="none" />
+            <rect
+              x="22"
+              y="67"
+              width="56"
+              height="31"
+              stroke="white"
+              strokeOpacity="0.5"
+              strokeWidth="0.7"
+              fill="none"
+            />
             {/* Área chica */}
-            <rect x="35" y="87" width="30" height="11" stroke="white" strokeOpacity="0.4" strokeWidth="0.6" fill="none" />
+            <rect
+              x="35"
+              y="87"
+              width="30"
+              height="11"
+              stroke="white"
+              strokeOpacity="0.4"
+              strokeWidth="0.6"
+              fill="none"
+            />
             {/* Punto de penal */}
-            <circle cx="50" cy="76" r="1.1" fill="var(--gold)" fillOpacity="0.95" />
+            <circle
+              cx="50"
+              cy="76"
+              r="1.1"
+              fill="var(--gold)"
+              fillOpacity="0.95"
+            />
             {/*
               Arco D: semicírculo centrado en el punto de penal (50,76), r=16.
               Intersecta el borde del área en x≈37 y x≈63 (y=67).
               sweep=1 (horario) dibuja el arco hacia el mediocampo — "hacia afuera"
               del área, pasando por (50,60). Correcto según reglamento FIFA.
             */}
-            <path d="M 37,67 A 16,16 0 0 1 63,67" stroke="white" strokeOpacity="0.35" strokeWidth="0.6" />
+            <path
+              d="M 37,67 A 16,16 0 0 1 63,67"
+              stroke="white"
+              strokeOpacity="0.35"
+              strokeWidth="0.6"
+            />
             {/*
               Córners en línea de gol (abajo): arco de cuarto de círculo r=4.
               Arrancan desde la línea de banda/gol y curvan HACIA adentro del campo.
               La línea de mediocampo (y=2) NO lleva córners.
             */}
             {/* Inferior izquierdo: desde (3,94) en la banda, horario hasta (7,98) en la línea de gol */}
-            <path d="M 3,94 A 4,4 0 0 1 7,98" stroke="white" strokeOpacity="0.45" strokeWidth="0.6" />
+            <path
+              d="M 3,94 A 4,4 0 0 1 7,98"
+              stroke="white"
+              strokeOpacity="0.45"
+              strokeWidth="0.6"
+            />
             {/* Inferior derecho: desde (93,98) en la línea de gol, antihorario hasta (97,94) en la banda */}
-            <path d="M 93,98 A 4,4 0 0 1 97,94" stroke="white" strokeOpacity="0.45" strokeWidth="0.6" />
+            <path
+              d="M 93,98 A 4,4 0 0 1 97,94"
+              stroke="white"
+              strokeOpacity="0.45"
+              strokeWidth="0.6"
+            />
           </svg>
 
           {/* Jugadores: FWD arriba (mediocampo) → GK abajo (portería propia) */}
@@ -650,7 +813,7 @@ function SinglePitch({
         </div>
       </div>
 
-      <p className="mt-2 text-center text-[0.6875rem] text-ink-subtle">
+      <p className="text-ink-subtle mt-2 text-center text-[0.6875rem]">
         {formation ?? t.result.lineupApprox}
       </p>
     </div>
@@ -695,11 +858,13 @@ function TeamLineup({
         <FlagImage iso2={flag} name={name} size="xs" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-sm font-medium text-ink">{name}</span>
+            <span className="text-ink text-sm font-medium">{name}</span>
             {!(confirmed && started) && (
               <span
                 className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.6875rem] font-medium ${
-                  confirmed ? "bg-brand-soft text-brand" : "bg-canvas text-ink-muted"
+                  confirmed
+                    ? "bg-brand-soft text-brand"
+                    : "bg-canvas text-ink-muted"
                 }`}
               >
                 <span
@@ -717,7 +882,7 @@ function TeamLineup({
               type="button"
               onClick={() => setOpen((v) => !v)}
               aria-expanded={open}
-              className="mt-1.5 inline-flex items-center gap-1 rounded-sm text-xs font-semibold text-brand transition-colors hover:text-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+              className="text-brand hover:text-brand-hover focus-visible:ring-brand mt-1.5 inline-flex items-center gap-1 rounded-sm text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               {open ? t.result.lineupHide : t.result.lineupView}
               <svg
@@ -736,7 +901,7 @@ function TeamLineup({
               </svg>
             </button>
           ) : (
-            <p className="mt-0.5 text-xs leading-5 text-ink-muted">
+            <p className="text-ink-muted mt-0.5 text-xs leading-5">
               {pendingNote}
             </p>
           )}
@@ -789,7 +954,11 @@ function MatchGoals({
 }) {
   const minuteToken = (g: ReportGoal) => {
     if (g.minute == null) return "";
-    const tag = g.penalty ? ` (${penaltyTag})` : g.owngoal ? ` (${ownGoalTag})` : "";
+    const tag = g.penalty
+      ? ` (${penaltyTag})`
+      : g.owngoal
+        ? ` (${ownGoalTag})`
+        : "";
     return `${g.minute}${g.offset ? `+${g.offset}` : ""}'${tag}`;
   };
 
@@ -798,7 +967,10 @@ function MatchGoals({
   const lines = (side: "a" | "b") => {
     const sideGoals = goals
       .filter((g) => g.team === side)
-      .sort((x, y) => (x.minute ?? 0) - (y.minute ?? 0) || (x.offset ?? 0) - (y.offset ?? 0));
+      .sort(
+        (x, y) =>
+          (x.minute ?? 0) - (y.minute ?? 0) || (x.offset ?? 0) - (y.offset ?? 0)
+      );
     const order: string[] = [];
     const byPlayer = new Map<string, ReportGoal[]>();
     for (const g of sideGoals) {
@@ -825,12 +997,14 @@ function MatchGoals({
   ];
 
   return (
-    <div className="mt-3 border-t border-line pt-3">
-      <p className="mb-2 text-[0.7rem] font-semibold uppercase tracking-widest text-ink-subtle">{heading}</p>
-      <div className="grid grid-cols-2 gap-4 text-sm text-ink-muted">
+    <div className="border-line mt-3 border-t pt-3">
+      <p className="text-ink-subtle mb-2 text-[0.7rem] font-semibold tracking-widest uppercase">
+        {heading}
+      </p>
+      <div className="text-ink-muted grid grid-cols-2 gap-4 text-sm">
         {cols.map((col, i) => (
           <div key={i}>
-            <p className="truncate font-semibold text-ink">{col.name}</p>
+            <p className="text-ink truncate font-semibold">{col.name}</p>
             <ul className="mt-1 space-y-0.5">
               {col.list.length ? (
                 col.list.map((line, j) => <li key={j}>{line}</li>)
@@ -845,7 +1019,13 @@ function MatchGoals({
   );
 }
 
-export default function PredictionResult({ result, matchStatus, scoreA, scoreB, matchId }: Props) {
+export default function PredictionResult({
+  result,
+  matchStatus,
+  scoreA,
+  scoreB,
+  matchId,
+}: Props) {
   const { t, locale } = useLanguage();
   const {
     team_a,
@@ -908,11 +1088,16 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!cancelled && typeof data?.translated === "string") {
-          setNarrativeTranslation({ source: narrative, result: data.translated });
+          setNarrativeTranslation({
+            source: narrative,
+            result: data.translated,
+          });
         }
       })
       .catch(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [narrative, locale, teamAEs, teamBEs, team_a, team_b]);
 
   // Nombre a mostrar según idioma. Se nombran igual que los campos del response
@@ -926,8 +1111,8 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
     matchStatus && LIVE_STATUSES.has(matchStatus)
       ? t.result.lineupUnavailableLive
       : matchStatus && FINISHED_STATUSES.has(matchStatus)
-      ? t.result.lineupUnavailableFinished
-      : t.result.lineupPendingNote;
+        ? t.result.lineupUnavailableFinished
+        : t.result.lineupPendingNote;
 
   const topScore = top_scorelines[0];
 
@@ -945,8 +1130,15 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
   // nuevo no muestre datos viejos. Sin cobertura → cae a la síntesis local.
   const abbrA = countryCode(team_a);
   const abbrB = countryCode(team_b);
-  type MatchReportData = { ft: [number, number]; ht: [number, number] | null; goals: ReportGoal[] };
-  const [report, setReport] = useState<{ key: string; data: MatchReportData } | null>(null);
+  type MatchReportData = {
+    ft: [number, number];
+    ht: [number, number] | null;
+    goals: ReportGoal[];
+  };
+  const [report, setReport] = useState<{
+    key: string;
+    data: MatchReportData;
+  } | null>(null);
   const reportKey = matchId ?? "";
   useEffect(() => {
     if (!isFinished || !matchId) return;
@@ -958,10 +1150,20 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (cancelled || !data?.found || !Array.isArray(data.ft) || data.ft.length !== 2) return;
+        if (
+          cancelled ||
+          !data?.found ||
+          !Array.isArray(data.ft) ||
+          data.ft.length !== 2
+        )
+          return;
         setReport({
           key: matchId,
-          data: { ft: data.ft, ht: Array.isArray(data.ht) ? data.ht : null, goals: Array.isArray(data.goals) ? data.goals : [] },
+          data: {
+            ft: data.ft,
+            ht: Array.isArray(data.ht) ? data.ht : null,
+            goals: Array.isArray(data.goals) ? data.goals : [],
+          },
         });
       })
       .catch(() => {});
@@ -978,7 +1180,8 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
   // Desenlace real (1X2) y su probabilidad según el modelo.
   const outcome: "a" | "b" | "draw" =
     actualA > actualB ? "a" : actualA < actualB ? "b" : "draw";
-  const actualOutcomeProb = outcome === "a" ? p_a : outcome === "b" ? p_b : p_draw;
+  const actualOutcomeProb =
+    outcome === "a" ? p_a : outcome === "b" ? p_b : p_draw;
   // "Resultado inesperado": lo que pasó tenía baja probabilidad (< 25%). Pondera por
   // el modelo, no por el marcador exacto: capta al favorito que no gana (p. ej. 84.8%
   // de Suiza y terminó empate), no solo el marcador raro.
@@ -997,10 +1200,63 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
   const goalNote = goalsDiverge
     ? t.result.compare.goalsMixed(team_a_es, devA > 0, team_b_es, devB > 0)
     : totalDiff > 0.75
-    ? t.result.compare.goalsMore
-    : totalDiff < -0.75
-    ? t.result.compare.goalsFewer
-    : t.result.compare.goalsAsExpected;
+      ? t.result.compare.goalsMore
+      : totalDiff < -0.75
+        ? t.result.compare.goalsFewer
+        : t.result.compare.goalsAsExpected;
+
+  // Comentario "cómo estuvo el partido" para finalizados, sintetizado de los datos
+  // reales (marcador + xG + probabilidad del modelo): desenlace + carácter (goleada /
+  // por la mínima / muchos goles) + relación con el pronóstico. Se arma en es/en vía
+  // i18n, sin fuentes externas, y reemplaza la narrativa predictiva del backend (que
+  // post-partido lee mal). Sin marcador válido (compare=false) → cae a la narrativa.
+  let matchSummary: string | null = null;
+  if (compare) {
+    const s = t.result.summary;
+    const winner =
+      outcome === "a" ? team_a_es : outcome === "b" ? team_b_es : null;
+    const loser =
+      outcome === "a" ? team_b_es : outcome === "b" ? team_a_es : null;
+    const gf = Math.max(actualA, actualB);
+    const ga = Math.min(actualA, actualB);
+    const total = actualA + actualB;
+    const margin = Math.abs(actualA - actualB);
+
+    const base = winner
+      ? s.win(winner, loser!, gf, ga)
+      : s.draw(team_a_es, team_b_es, actualA);
+    const character =
+      winner && margin >= 3
+        ? s.blowout
+        : winner && margin === 1
+          ? s.narrow
+          : total >= 4
+            ? s.highScoring
+            : "";
+    const expectation = isUpset
+      ? s.surprise(formatPct(actualOutcomeProb))
+      : actualOutcomeProb >= 0.5
+        ? s.expected
+        : "";
+
+    const first = character ? `${base} ${character}` : base;
+    matchSummary = expectation ? `${first}. ${expectation}.` : `${first}.`;
+  }
+
+  // Crónica completa (ESPN + reglas) cuando hay datos del partido; si no, la síntesis
+  // local de arriba; y si tampoco, la narrativa predictiva del backend.
+  const activeReport = report && report.key === reportKey ? report.data : null;
+  const reportText = activeReport
+    ? buildMatchReport(locale, {
+        ft: activeReport.ft,
+        ht: activeReport.ht,
+        goals: activeReport.goals,
+        teamA: team_a_es,
+        teamB: team_b_es,
+        outcomeProb: actualOutcomeProb,
+        isUpset,
+      })
+    : null;
 
   // Comentario "cómo estuvo el partido" para finalizados, sintetizado de los datos
   // reales (marcador + xG + probabilidad del modelo): desenlace + carácter (goleada /
@@ -1058,7 +1314,11 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
     ? topScore.score_a === topScore.score_b
     : p_draw >= p_a && p_draw >= p_b;
   const favorsA = topScore ? topScore.score_a > topScore.score_b : p_a >= p_b;
-  const winnerName = drawMostLikely ? t.result.draw : favorsA ? team_a_es : team_b_es;
+  const winnerName = drawMostLikely
+    ? t.result.draw
+    : favorsA
+      ? team_a_es
+      : team_b_es;
   const winnerFlag = drawMostLikely ? null : favorsA ? flag_a : flag_b;
   const winnerHeadline = drawMostLikely
     ? t.result.draw
@@ -1069,8 +1329,8 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
     winnerProb >= 0.6
       ? t.result.confidenceHigh
       : winnerProb >= 0.45
-      ? t.result.confidenceMedium
-      : t.result.confidenceLow;
+        ? t.result.confidenceMedium
+        : t.result.confidenceLow;
 
   // Etiqueta de sede construida en el front (localizada), en vez del venue_label
   // que el backend manda ya formateado en español. neutral → "Cancha neutral";
@@ -1081,13 +1341,13 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
     home_team_id === team_a_id
       ? team_a_es
       : home_team_id === team_b_id
-      ? team_b_es
-      : null;
+        ? team_b_es
+        : null;
   const venueLabel = neutral
     ? t.result.venueNeutral
     : homeName != null
-    ? t.result.venueHome(homeName)
-    : null;
+      ? t.result.venueHome(homeName)
+      : null;
 
   return (
     <div className="space-y-6">
@@ -1099,7 +1359,9 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
           <div className="flex justify-end">
             <span
               className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
-                isLive ? "bg-danger-soft text-danger" : "bg-canvas text-ink-muted"
+                isLive
+                  ? "bg-danger-soft text-danger"
+                  : "bg-canvas text-ink-muted"
               }`}
             >
               {isLive && (
@@ -1119,8 +1381,15 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
 
         <div className="flex items-center gap-4">
           <div className="flex flex-1 flex-col items-center gap-2">
-            <FlagImage iso2={flag_a} name={team_a_es} size="lg" className="shadow-sm" />
-            <span className="text-center text-lg font-semibold text-ink">{team_a_es}</span>
+            <FlagImage
+              iso2={flag_a}
+              name={team_a_es}
+              size="lg"
+              className="shadow-sm"
+            />
+            <span className="text-ink text-center text-lg font-semibold">
+              {team_a_es}
+            </span>
           </div>
           {hasScore ? (
             <span
@@ -1130,13 +1399,20 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
               {actualA} – {actualB}
             </span>
           ) : (
-            <span className="text-xs font-semibold uppercase tracking-widest text-ink-subtle">
+            <span className="text-ink-subtle text-xs font-semibold tracking-widest uppercase">
               {t.result.vs}
             </span>
           )}
           <div className="flex flex-1 flex-col items-center gap-2">
-            <FlagImage iso2={flag_b} name={team_b_es} size="lg" className="shadow-sm" />
-            <span className="text-center text-lg font-semibold text-ink">{team_b_es}</span>
+            <FlagImage
+              iso2={flag_b}
+              name={team_b_es}
+              size="lg"
+              className="shadow-sm"
+            />
+            <span className="text-ink text-center text-lg font-semibold">
+              {team_b_es}
+            </span>
           </div>
         </div>
       </div>
@@ -1156,7 +1432,7 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
       {/* Probabilidades 1X2. En finalizados se resalta el desenlace real (outline +
           "real") y se atenúan los otros; en el resto, las tres planas. */}
       <div>
-        <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-ink-subtle">
+        <p className="text-ink-subtle mb-4 text-xs font-semibold tracking-widest uppercase">
           {t.result.probabilitiesAt90}
         </p>
         <div className="space-y-4">
@@ -1169,10 +1445,13 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
           ).map(({ key, label, value, color }) => {
             const occurred = compare && key === outcome;
             return (
-              <div key={key} className={compare && !occurred ? "opacity-60" : ""}>
+              <div
+                key={key}
+                className={compare && !occurred ? "opacity-60" : ""}
+              >
                 <div className="mb-1.5 flex items-center justify-between text-sm">
                   <span
-                    className="font-medium text-ink"
+                    className="text-ink font-medium"
                     style={occurred ? { color } : undefined}
                   >
                     {label}
@@ -1182,8 +1461,10 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
                   </span>
                 </div>
                 <div
-                  className="h-2.5 w-full overflow-hidden rounded-full bg-line"
-                  style={occurred ? { boxShadow: `0 0 0 1.5px ${color}` } : undefined}
+                  className="bg-line h-2.5 w-full overflow-hidden rounded-full"
+                  style={
+                    occurred ? { boxShadow: `0 0 0 1.5px ${color}` } : undefined
+                  }
                 >
                   <div
                     className="h-2.5 rounded-full"
@@ -1200,35 +1481,39 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
       </div>
 
       <div>
-        <div className="flex items-center justify-between rounded-xl bg-canvas px-8 py-5">
+        <div className="bg-canvas flex items-center justify-between rounded-xl px-8 py-5">
           <div className="text-center">
-            <p className="mb-1 text-xs uppercase tracking-widest text-ink-subtle">
+            <p className="text-ink-subtle mb-1 text-xs tracking-widest uppercase">
               xG {team_a_es}
             </p>
-            <p className="font-mono text-3xl font-bold text-ink">{xg_a.toFixed(1)}</p>
+            <p className="text-ink font-mono text-3xl font-bold">
+              {xg_a.toFixed(1)}
+            </p>
             {compare && (
-              <p className="mt-1 text-xs text-ink-muted">
+              <p className="text-ink-muted mt-1 text-xs">
                 {t.result.compare.goalsLabel}:{" "}
-                <span className="font-semibold text-ink">{actualA}</span>
+                <span className="text-ink font-semibold">{actualA}</span>
               </p>
             )}
           </div>
-          <span className="text-2xl font-light text-line">—</span>
+          <span className="text-line text-2xl font-light">—</span>
           <div className="text-center">
-            <p className="mb-1 text-xs uppercase tracking-widest text-ink-subtle">
+            <p className="text-ink-subtle mb-1 text-xs tracking-widest uppercase">
               xG {team_b_es}
             </p>
-            <p className="font-mono text-3xl font-bold text-ink">{xg_b.toFixed(1)}</p>
+            <p className="text-ink font-mono text-3xl font-bold">
+              {xg_b.toFixed(1)}
+            </p>
             {compare && (
-              <p className="mt-1 text-xs text-ink-muted">
+              <p className="text-ink-muted mt-1 text-xs">
                 {t.result.compare.goalsLabel}:{" "}
-                <span className="font-semibold text-ink">{actualB}</span>
+                <span className="text-ink font-semibold">{actualB}</span>
               </p>
             )}
           </div>
         </div>
         {compare && (
-          <p className="mt-2 text-center text-xs text-ink-muted">{goalNote}</p>
+          <p className="text-ink-muted mt-2 text-center text-xs">{goalNote}</p>
         )}
       </div>
 
@@ -1249,7 +1534,7 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
               style={{ backgroundColor: `${TEAM_A}18` }}
             >
               <p
-                className="mb-1 text-xs font-semibold uppercase tracking-widest"
+                className="mb-1 text-xs font-semibold tracking-widest uppercase"
                 style={{ color: TEAM_A }}
               >
                 {t.result.advancesTeamLabel(team_a_es)}
@@ -1263,7 +1548,7 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
               style={{ backgroundColor: `${TEAM_B}18` }}
             >
               <p
-                className="mb-1 text-xs font-semibold uppercase tracking-widest"
+                className="mb-1 text-xs font-semibold tracking-widest uppercase"
                 style={{ color: TEAM_B }}
               >
                 {t.result.advancesTeamLabel(team_b_es)}
@@ -1274,9 +1559,9 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
             </div>
           </div>
           {p_penalties != null && (
-            <p className="text-center text-xs text-ink-muted">
+            <p className="text-ink-muted text-center text-xs">
               {t.result.penaltiesProbability}{" "}
-              <span className="font-semibold text-ink">
+              <span className="text-ink font-semibold">
                 {formatPct(p_penalties)}
               </span>
             </p>
@@ -1284,11 +1569,13 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
         </div>
       )}
 
-      <div className="rounded-xl bg-canvas px-5 py-4">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-ink-subtle">
+      <div className="bg-canvas rounded-xl px-5 py-4">
+        <p className="text-ink-subtle mb-2 text-xs font-semibold tracking-widest uppercase">
           {t.result.analysis}
         </p>
-        <p className="text-sm leading-7 text-ink-muted">{reportText ?? matchSummary ?? narrativeDisplay}</p>
+        <p className="text-ink-muted text-sm leading-7">
+          {reportText ?? matchSummary ?? narrativeDisplay}
+        </p>
         {activeReport && activeReport.goals.length > 0 && (
           <MatchGoals
             goals={activeReport.goals}
@@ -1301,8 +1588,8 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
         )}
       </div>
 
-      <div className="rounded-xl border border-line px-5 py-4">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-ink-subtle">
+      <div className="border-line rounded-xl border px-5 py-4">
+        <p className="text-ink-subtle mb-3 text-xs font-semibold tracking-widest uppercase">
           {t.result.squadFormation}
         </p>
         <div className="space-y-4">
@@ -1312,10 +1599,10 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
             const localSide: "a" | "b" | null = neutral
               ? null
               : home_team_id === team_a_id
-              ? "a"
-              : home_team_id === team_b_id
-              ? "b"
-              : null;
+                ? "a"
+                : home_team_id === team_b_id
+                  ? "b"
+                  : null;
             // Override oficial por cruce si está cargado (PDF de FIFA); si no, la regla.
             // El color del arquero viene de la designación; sin dato → dorado (undefined).
             const designation = designationFor(flag_a, flag_b);
@@ -1359,32 +1646,40 @@ export default function PredictionResult({ result, matchStatus, scoreA, scoreB, 
       {/* Tarjeta "Resultado más probable": el cierre de la predicción. Se quita en
           finalizados (el resultado real manda); se mantiene en vivo y en el predictor. */}
       {!isFinished && (
-        <div className="rounded-xl bg-gold-soft px-6 py-5">
-          <p className="text-xs font-semibold uppercase tracking-widest text-gold">
+        <div className="bg-gold-soft rounded-xl px-6 py-5">
+          <p className="text-gold text-xs font-semibold tracking-widest uppercase">
             {t.result.mostLikelyResult}
           </p>
           <div className="mt-2 flex items-center gap-4">
             <div className="flex min-w-0 items-center gap-3">
               {winnerFlag && (
-                <FlagImage iso2={winnerFlag} name={winnerName} size="md" className="shadow-sm" />
+                <FlagImage
+                  iso2={winnerFlag}
+                  name={winnerName}
+                  size="md"
+                  className="shadow-sm"
+                />
               )}
               <div className="min-w-0">
-                <p className="truncate text-2xl font-bold text-gold">{winnerHeadline}</p>
-                <p className="mt-0.5 text-sm text-ink-muted">
-                  {formatPct(winnerProb)} · {t.result.confidencePhrase(confidence)}
+                <p className="text-gold truncate text-2xl font-bold">
+                  {winnerHeadline}
+                </p>
+                <p className="text-ink-muted mt-0.5 text-sm">
+                  {formatPct(winnerProb)} ·{" "}
+                  {t.result.confidencePhrase(confidence)}
                 </p>
               </div>
             </div>
 
             {topScore && (
               <div className="ml-auto shrink-0 text-right">
-                <p className="text-xs uppercase tracking-widest text-gold">
+                <p className="text-gold text-xs tracking-widest uppercase">
                   {t.result.score}
                 </p>
-                <p className="text-xl font-bold text-ink">
+                <p className="text-ink text-xl font-bold">
                   {topScore.score_a}–{topScore.score_b}
                 </p>
-                <p className="text-xs text-ink-muted">
+                <p className="text-ink-muted text-xs">
                   {formatPct(topScore.probability)}
                 </p>
               </div>

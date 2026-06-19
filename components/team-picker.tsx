@@ -53,7 +53,7 @@ export default function TeamPicker({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-3 rounded-[10px] border border-line bg-surface px-4 py-3.5 text-left text-sm transition hover:border-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        className="border-line bg-surface hover:border-brand/40 focus-visible:ring-brand flex w-full items-center gap-3 rounded-[10px] border px-4 py-3.5 text-left text-sm transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
       >
         {value ? (
           <>
@@ -62,7 +62,7 @@ export default function TeamPicker({
               name={teamName(value.canonical, value.name_es, locale)}
               size="xs"
             />
-            <span className="font-medium text-ink">
+            <span className="text-ink font-medium">
               {teamName(value.canonical, value.name_es, locale)}
             </span>
           </>
@@ -71,23 +71,23 @@ export default function TeamPicker({
         )}
         <ChevronDown
           size={14}
-          className={`ml-auto shrink-0 text-ink-subtle transition-transform duration-150 ${
+          className={`text-ink-subtle ml-auto shrink-0 transition-transform duration-150 ${
             open ? "rotate-180" : ""
           }`}
         />
       </button>
 
       {open && (
-        <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-[10px] border border-line bg-surface shadow-lg">
-          <div className="border-b border-line px-3 py-2.5">
+        <div className="border-line bg-surface absolute z-20 mt-1 w-full overflow-hidden rounded-[10px] border shadow-lg">
+          <div className="border-line border-b px-3 py-2.5">
             <div className="flex items-center gap-2">
-              <Search size={13} className="shrink-0 text-ink-subtle" />
+              <Search size={13} className="text-ink-subtle shrink-0" />
               <input
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t.teamPicker.search}
-                className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-ink-subtle"
+                className="text-ink placeholder:text-ink-subtle flex-1 bg-transparent text-sm outline-none"
               />
               {query && (
                 <button
@@ -103,7 +103,7 @@ export default function TeamPicker({
 
           <ul className="max-h-56 overflow-y-auto py-1">
             {filtered.length === 0 ? (
-              <li className="px-4 py-3 text-sm text-ink-subtle">
+              <li className="text-ink-subtle px-4 py-3 text-sm">
                 {t.teamPicker.noResults}
               </li>
             ) : (
@@ -116,7 +116,7 @@ export default function TeamPicker({
                       setOpen(false);
                       setQuery("");
                     }}
-                    className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm text-ink transition-colors hover:bg-canvas ${
+                    className={`text-ink hover:bg-canvas flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
                       value?.id === team.id ? "bg-brand-soft font-medium" : ""
                     }`}
                   >

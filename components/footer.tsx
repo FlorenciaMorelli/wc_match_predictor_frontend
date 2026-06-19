@@ -5,15 +5,43 @@ import Logo from "@/components/logo";
 import { useLanguage } from "@/lib/i18n";
 
 // 1. Añadimos los iconos como componentes SVG locales
-const GithubIcon = ({ size = 24, ...props }: React.SVGProps<SVGSVGElement> & { size?: number | string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+const GithubIcon = ({
+  size = 24,
+  ...props
+}: React.SVGProps<SVGSVGElement> & { size?: number | string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
     <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.2c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
     <path d="M9 18c-4.51 2-5-2-7-2" />
   </svg>
 );
 
-const LinkedinIcon = ({ size = 24, ...props }: React.SVGProps<SVGSVGElement> & { size?: number | string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+const LinkedinIcon = ({
+  size = 24,
+  ...props
+}: React.SVGProps<SVGSVGElement> & { size?: number | string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
     <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
     <rect width="4" height="12" x="2" y="9" />
     <circle cx="4" cy="4" r="2" />
@@ -37,9 +65,9 @@ export default function Footer() {
   const { t } = useLanguage();
 
   return (
-    <footer className="border-t border-line bg-surface">
+    <footer className="border-line bg-surface border-t">
       <div className="mx-auto max-w-7xl px-6 pt-6 md:px-12">
-        <p className="text-center text-xs leading-5 text-ink-subtle md:text-left">
+        <p className="text-ink-subtle text-center text-xs leading-5 md:text-left">
           {t.footer.responsibleUse}
         </p>
       </div>
@@ -47,13 +75,13 @@ export default function Footer() {
         {/* Marca */}
         <div className="flex items-center gap-2.5">
           <Logo size={20} />
-          <span className="font-display text-sm font-bold tracking-tight text-brand">
+          <span className="font-display text-brand text-sm font-bold tracking-tight">
             {t.nav.title}
           </span>
           {/* Acceso discreto al evaluador (no en primer plano) */}
           <Link
             href="/eval"
-            className="ml-1 text-xs text-ink-subtle underline-offset-2 transition-colors hover:text-ink-muted hover:underline"
+            className="text-ink-subtle hover:text-ink-muted ml-1 text-xs underline-offset-2 transition-colors hover:underline"
           >
             {t.footer.modelAccuracy}
           </Link>
@@ -61,17 +89,17 @@ export default function Footer() {
 
         {/* Créditos */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-8">
-          <span className="text-xs text-ink-subtle">{t.footer.madeBy}</span>
+          <span className="text-ink-subtle text-xs">{t.footer.madeBy}</span>
           <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-6">
             {DEVS.map((dev) => (
               <div key={dev.name} className="flex items-center gap-2">
-                <span className="text-sm font-medium text-ink">{dev.name}</span>
+                <span className="text-ink text-sm font-medium">{dev.name}</span>
                 <a
                   href={dev.github}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`${dev.name} — GitHub`}
-                  className="text-ink-subtle transition-colors hover:text-ink"
+                  className="text-ink-subtle hover:text-ink transition-colors"
                 >
                   {/* 2. Usamos los componentes locales aquí */}
                   <GithubIcon size={15} aria-hidden="true" />
@@ -81,7 +109,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`${dev.name} — LinkedIn`}
-                  className="text-ink-subtle transition-colors hover:text-ink"
+                  className="text-ink-subtle hover:text-ink transition-colors"
                 >
                   {/* 2. Usamos los componentes locales aquí */}
                   <LinkedinIcon size={15} aria-hidden="true" />

@@ -64,7 +64,13 @@ export function summarize(evals: MatchEval[]): EvalSummary {
       winnerAccuracy: 0,
       brier: 0,
       exactScoreRate: 0,
-      calibration: buckets.map((b) => ({ lo: b.lo, hi: b.hi, n: 0, predMean: 0, obsRate: 0 })),
+      calibration: buckets.map((b) => ({
+        lo: b.lo,
+        hi: b.hi,
+        n: 0,
+        predMean: 0,
+        obsRate: 0,
+      })),
     };
   }
 
@@ -82,7 +88,10 @@ export function summarize(evals: MatchEval[]): EvalSummary {
     for (const o of outcomes) {
       const y = actual === o ? 1 : 0;
       brierSum += (p[o] - y) ** 2; // Brier multiclase: suma sobre los 3 desenlaces
-      const idx = Math.min(BUCKETS - 1, Math.max(0, Math.floor(p[o] * BUCKETS)));
+      const idx = Math.min(
+        BUCKETS - 1,
+        Math.max(0, Math.floor(p[o] * BUCKETS))
+      );
       buckets[idx].sumP += p[o];
       buckets[idx].sumY += y;
       buckets[idx].n++;

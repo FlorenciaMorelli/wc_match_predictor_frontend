@@ -31,10 +31,10 @@ function diff(): Remaining {
 function Tile({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex flex-col items-center">
-      <span className="font-mono text-2xl font-bold tabular-nums text-brand md:text-3xl">
+      <span className="text-brand font-mono text-2xl font-bold tabular-nums md:text-3xl">
         {String(value).padStart(2, "0")}
       </span>
-      <span className="mt-1 text-[0.625rem] font-semibold uppercase tracking-widest text-ink-subtle">
+      <span className="text-ink-subtle mt-1 text-[0.625rem] font-semibold tracking-widest uppercase">
         {label}
       </span>
     </div>
@@ -57,25 +57,33 @@ export default function Countdown() {
 
   if (time?.started) {
     return (
-      <div className="flex items-center gap-2.5 rounded-full border border-line bg-surface px-5 py-2.5 shadow-sm">
-        <span className="h-2 w-2 animate-pulse rounded-full bg-danger" />
-        <span className="text-sm font-semibold text-ink">{t.countdown.started}</span>
+      <div className="border-line bg-surface flex items-center gap-2.5 rounded-full border px-5 py-2.5 shadow-sm">
+        <span className="bg-danger h-2 w-2 animate-pulse rounded-full" />
+        <span className="text-ink text-sm font-semibold">
+          {t.countdown.started}
+        </span>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl border border-line bg-surface px-8 py-5 shadow-sm">
-      <span className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
+    <div className="border-line bg-surface flex flex-col items-center gap-3 rounded-2xl border px-8 py-5 shadow-sm">
+      <span className="text-ink-muted text-xs font-semibold tracking-widest uppercase">
         {t.countdown.label}
       </span>
       <div className="flex items-start gap-5 md:gap-7">
         <Tile value={time?.days ?? 0} label={t.countdown.days} />
-        <span className="pt-1 text-2xl font-light text-line md:text-3xl">:</span>
+        <span className="text-line pt-1 text-2xl font-light md:text-3xl">
+          :
+        </span>
         <Tile value={time?.hours ?? 0} label={t.countdown.hours} />
-        <span className="pt-1 text-2xl font-light text-line md:text-3xl">:</span>
+        <span className="text-line pt-1 text-2xl font-light md:text-3xl">
+          :
+        </span>
         <Tile value={time?.minutes ?? 0} label={t.countdown.min} />
-        <span className="pt-1 text-2xl font-light text-line md:text-3xl">:</span>
+        <span className="text-line pt-1 text-2xl font-light md:text-3xl">
+          :
+        </span>
         <Tile value={time?.seconds ?? 0} label={t.countdown.sec} />
       </div>
     </div>
