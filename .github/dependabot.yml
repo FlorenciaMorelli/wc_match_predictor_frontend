@@ -3,6 +3,9 @@ updates:
   # Dependencias npm
   - package-ecosystem: "npm"
     directory: "/"
+    # Los PRs van a staging (rama de integración), no a main (default). Así entran
+    # por el flujo normal con CI y no rompen el guard de main (main == staging).
+    target-branch: "staging"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
@@ -18,6 +21,7 @@ updates:
   # Actualizaciones de las GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "staging"
     schedule:
       interval: "weekly"
     commit-message:
