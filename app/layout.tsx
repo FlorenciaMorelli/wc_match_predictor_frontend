@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Archivo } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import LanguageProvider from "@/providers/language-provider";
 import "./globals.css";
 
@@ -50,6 +52,8 @@ export default function RootLayout({
       </head>
       <body className="flex min-h-full flex-col">
         <LanguageProvider>{children}</LanguageProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
