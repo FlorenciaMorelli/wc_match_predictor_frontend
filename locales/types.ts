@@ -129,7 +129,8 @@ export type Translations = {
     lineMid: string;
     lineFwd: string;
     probabilitiesAt90: string;
-    penaltiesProbability: string;
+    probabilitiesKnockout: string;
+    knockoutHeading: string;
     analysis: string;
     summary: {
       win: (winner: string, loser: string, gf: number, ga: number) => string;

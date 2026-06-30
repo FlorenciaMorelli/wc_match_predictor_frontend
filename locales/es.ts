@@ -70,6 +70,13 @@ export const es: Translations = {
       STATUS_FULL_TIME: "Finalizado",
       STATUS_FIRST_HALF: "Primer tiempo",
       STATUS_SECOND_HALF: "Segundo tiempo",
+      STATUS_OVERTIME: "Alargue",
+      STATUS_END_OF_REGULATION: "Fin de los 90'",
+      STATUS_END_OF_EXTRATIME: "Fin del alargue",
+      STATUS_SHOOTOUT: "Penales",
+      STATUS_FINAL: "Finalizado",
+      STATUS_FINAL_PEN: "Finalizado (penales)",
+      STATUS_FINAL_AET: "Finalizado (alargue)",
     },
   },
   predictor: {
@@ -202,7 +209,8 @@ export const es: Translations = {
     lineMid: "MED",
     lineFwd: "DEL",
     probabilitiesAt90: "Probabilidades a 90'",
-    penaltiesProbability: "Probabilidad de definición por penales:",
+    probabilitiesKnockout: "Probabilidades del partido",
+    knockoutHeading: "Probabilidades de definición por penales",
     analysis: "Análisis",
     summary: {
       win: (winner, loser, gf, ga) =>
