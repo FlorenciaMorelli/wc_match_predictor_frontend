@@ -5,6 +5,8 @@ import { CalendarDays } from "lucide-react";
 import type { FixtureMatch, MatchStatus, PredictResponse } from "@/types";
 import { fetchFixture, toApiError, type ApiError } from "@/lib/api";
 import { cachedPredict, upcomingFreshness } from "@/lib/prediction-cache";
+import { isKnockoutRound } from "@/lib/rounds";
+import { isLiveStatus, isFinishedStatus } from "@/lib/status";
 import PredictionResult from "./prediction-result";
 import PredictLoader from "./predict-loader";
 import ConnectionError from "./connection-error";
@@ -19,27 +21,22 @@ import {
 } from "@/lib/datetime";
 import { cityForVenue, homeNationIso } from "@/lib/venues";
 
-const LIVE_STATUSES = new Set([
-  "en juego",
-  "STATUS_FIRST_HALF",
-  "STATUS_SECOND_HALF",
-  "descanso",
-  "STATUS_HALFTIME",
-]);
-
-const FINISHED_STATUSES = new Set(["finalizado", "STATUS_FULL_TIME"]);
-
-// Ventana máxima de un partido (90' + entretiempo + descuento + colchón). Pasado
-// esto, un partido que la API todavía marca "en vivo" se considera finalizado: la
-// API a veces tarda en transicionar el estado y, sin esto, la card queda pulsando
-// como en vivo indefinidamente. NO hacemos lo inverso (forzar "en vivo" sobre un
-// `programado`): no se puede distinguir un inicio real de un retraso/postergación.
-const MAX_MATCH_MS = 140 * 60 * 1000;
+// Ventana máxima de un partido: pasado esto, un partido que la API todavía marca
+// "en vivo" se considera finalizado (la API a veces tarda en transicionar el estado
+// y, sin esto, la card queda pulsando como en vivo indefinidamente). NO hacemos lo
+// inverso (forzar "en vivo" sobre un `programado`): no se puede distinguir un inicio
+// real de un retraso. Grupos: 90' + entretiempo + descuento + colchón. Eliminatoria:
+// suma alargue (30') + tanda de penales + cortes → ventana más amplia.
+const MAX_REGULAR_MATCH_MS = 140 * 60 * 1000;
+const MAX_KNOCKOUT_MATCH_MS = 210 * 60 * 1000;
 
 function effectiveStatus(match: FixtureMatch): MatchStatus {
-  if (LIVE_STATUSES.has(match.status)) {
+  if (isLiveStatus(match.status)) {
     const ko = matchKickoff(match.date, match.time_utc);
-    if (ko && Date.now() > ko.getTime() + MAX_MATCH_MS) return "finalizado";
+    const cap = isKnockoutRound(match.round)
+      ? MAX_KNOCKOUT_MATCH_MS
+      : MAX_REGULAR_MATCH_MS;
+    if (ko && Date.now() > ko.getTime() + cap) return "finalizado";
   }
   return match.status;
 }
@@ -51,12 +48,23 @@ const STATUS_STYLE: Record<string, string> = {
     "text-emerald-700 bg-emerald-50 dark:text-emerald-300/90 dark:bg-emerald-900/20",
   STATUS_SECOND_HALF:
     "text-emerald-700 bg-emerald-50 dark:text-emerald-300/90 dark:bg-emerald-900/20",
+  STATUS_OVERTIME:
+    "text-emerald-700 bg-emerald-50 dark:text-emerald-300/90 dark:bg-emerald-900/20",
+  STATUS_SHOOTOUT:
+    "text-emerald-700 bg-emerald-50 dark:text-emerald-300/90 dark:bg-emerald-900/20",
   descanso:
     "text-amber-700  bg-amber-50  dark:text-amber-300/90  dark:bg-amber-900/20",
   STATUS_HALFTIME:
     "text-amber-700  bg-amber-50  dark:text-amber-300/90  dark:bg-amber-900/20",
+  STATUS_END_OF_REGULATION:
+    "text-amber-700 bg-amber-50 dark:text-amber-300/90 dark:bg-amber-900/20",
+  STATUS_END_OF_EXTRATIME:
+    "text-amber-700 bg-amber-50 dark:text-amber-300/90 dark:bg-amber-900/20",
   finalizado: "text-ink-muted bg-canvas",
   STATUS_FULL_TIME: "text-ink-muted bg-canvas",
+  STATUS_FINAL: "text-ink-muted bg-canvas",
+  STATUS_FINAL_PEN: "text-ink-muted bg-canvas",
+  STATUS_FINAL_AET: "text-ink-muted bg-canvas",
   postergado: "text-danger bg-danger-soft",
   cancelado: "text-danger bg-danger-soft",
   suspendido: "text-danger bg-danger-soft",
@@ -211,7 +219,7 @@ function MatchCard({ match }: { match: FixtureMatch }) {
   // la combinación engañosa "Finalizado 0-0". Se confía en el marcador solo cuando
   // la API lo confirma explícitamente (estado no fue inferido por nosotros).
   const statusWasInferred = status !== match.status;
-  const isLive = LIVE_STATUSES.has(status);
+  const isLive = isLiveStatus(status);
   const statusStyle = STATUS_STYLE[status] ?? "text-ink-muted bg-canvas";
   const statusLabel = t.fixture.status[status] ?? status;
   const roundLabel = match.round
@@ -230,7 +238,7 @@ function MatchCard({ match }: { match: FixtureMatch }) {
   const utcTooltip = match.time_utc
     ? `${match.time_utc} ${t.fixture.utcSuffix}`
     : "";
-  const isFinished = FINISHED_STATUSES.has(status);
+  const isFinished = isFinishedStatus(status);
   // "Ver análisis" si el partido ya arrancó (en vivo) o terminó; si no, "Ver predicción".
   const hasStarted = isLive || isFinished;
   // Ciudad del estadio (mapa estático de los 16 venues WC2026). null si el backend
@@ -279,6 +287,9 @@ function MatchCard({ match }: { match: FixtureMatch }) {
           team_a_id: match.team_a_id,
           team_b_id: match.team_b_id,
           date: match.date,
+          // En rondas eliminatorias pedimos el modo knockout para que el backend
+          // simule alargue + penales y devuelva p_advance_* / p_penalties.
+          knockout: isKnockoutRound(match.round),
         },
         // Finalizado → permanente (inmutable). Si no, TTL por proximidad al inicio: el XI
         // se confirma ~90 min antes, así que cerca del partido se refresca seguido.

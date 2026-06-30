@@ -69,6 +69,13 @@ export const en: Translations = {
       STATUS_FULL_TIME: "Full time",
       STATUS_FIRST_HALF: "First half",
       STATUS_SECOND_HALF: "Second half",
+      STATUS_OVERTIME: "Extra time",
+      STATUS_END_OF_REGULATION: "End of regulation",
+      STATUS_END_OF_EXTRATIME: "End of extra time",
+      STATUS_SHOOTOUT: "Penalties",
+      STATUS_FINAL: "Full time",
+      STATUS_FINAL_PEN: "Full time (pens)",
+      STATUS_FINAL_AET: "Full time (AET)",
     },
   },
   predictor: {
@@ -199,7 +206,8 @@ export const en: Translations = {
     lineMid: "MID",
     lineFwd: "FWD",
     probabilitiesAt90: "Probabilities at 90'",
-    penaltiesProbability: "Probability of penalty shootout:",
+    probabilitiesKnockout: "Match probabilities",
+    knockoutHeading: "Penalty shootout probabilities",
     analysis: "Analysis",
     summary: {
       win: (winner, loser, gf, ga) => `${winner} beat ${loser} ${gf}–${ga}`,

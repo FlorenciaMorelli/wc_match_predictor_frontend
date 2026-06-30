@@ -5,6 +5,35 @@ Todos los cambios relevantes de este proyecto se documentan acá.
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 adhiere a [SemVer](https://semver.org/lang/es/). Cada versión corresponde a un tag `vX.Y.Z`.
 
+## [0.11.0] — 2026-06-29
+
+### Added
+
+- **Penales y avance en eliminatorias** (`components/prediction-result.tsx`): en partidos de
+  eliminatoria la predicción suma un bloque **"Probabilidades de definición por penales (x%)"** —el
+  porcentaje del título es la chance de que el cruce vaya a penales— con una **barra dividida**
+  (tug-of-war: cada selección crece desde su lado y suman 100%) que muestra quién avanza la llave.
+
+### Changed
+
+- En partidos de **eliminatoria**, el bloque de probabilidades 1X2 se titula **"Probabilidades del
+  partido"** (en grupos sigue siendo "Probabilidades a 90'"): el resultado mostrado aplica al partido
+  (90' o, si va al alargue, 120'), sin etiquetarlo confusamente como "a 90'".
+
+### Fixed
+
+- El **fixture** ahora pide la predicción en modo eliminatoria (`knockout=true`) para las rondas que no
+  son fase de grupos (`lib/rounds.ts` · `isKnockoutRound`). Antes los partidos de dieciseisavos en
+  adelante se calculaban en modo regular, por lo que `p_advance_*` / `p_penalties` llegaban en `null` y
+  el bloque de eliminatoria nunca aparecía. El predictor manual (con su toggle) no estaba afectado.
+- **Estados de eliminatoria** (`lib/status.ts`, NUEVO, fuente única compartida por fixture y resultado):
+  el front reconoce los estados que el back manda en fase final — `STATUS_OVERTIME` (alargue),
+  `STATUS_SHOOTOUT` (penales), los cortes entre fases y los finales por alargue/penales
+  (`STATUS_FINAL_AET` / `STATUS_FINAL_PEN`, con red de seguridad para cualquier `STATUS_FINAL_*`) — con
+  su etiqueta es/en, color y clasificación en vivo/finalizado. La reconciliación de "en vivo trabado"
+  usa una ventana más amplia en eliminatoria (suma alargue + penales) para no darlos por finalizados
+  antes de tiempo.
+
 ## [0.10.0] — 2026-06-24
 
 ### Added
@@ -154,6 +183,7 @@ adhiere a [SemVer](https://semver.org/lang/es/). Cada versión corresponde a un 
 > El historial previo a `0.2.0` (narrativa traducida es→en, sede neutral i18n y la base de la app)
 > está en el log de git.
 
+[0.11.0]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.8.1...v0.9.0
 [0.8.1]: https://github.com/FlorenciaMorelli/wc_match_predictor_frontend/compare/v0.8.0...v0.8.1
