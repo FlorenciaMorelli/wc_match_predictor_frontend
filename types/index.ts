@@ -117,4 +117,13 @@ export type MatchStatus =
   | "STATUS_FIRST_HALF"
   | "STATUS_SECOND_HALF"
   | "STATUS_HALFTIME"
-  | "STATUS_FULL_TIME";
+  | "STATUS_FULL_TIME"
+  // Eliminatoria: alargue, tanda de penales, cortes entre fases y finales por
+  // alargue (AET) o penales.
+  | "STATUS_OVERTIME"
+  | "STATUS_END_OF_REGULATION"
+  | "STATUS_END_OF_EXTRATIME"
+  | "STATUS_SHOOTOUT"
+  | "STATUS_FINAL"
+  | "STATUS_FINAL_PEN"
+  | "STATUS_FINAL_AET";

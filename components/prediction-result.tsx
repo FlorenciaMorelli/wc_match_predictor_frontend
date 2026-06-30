@@ -20,6 +20,7 @@ import {
   type KitPattern,
 } from "@/lib/kits";
 import { useLanguage, teamName } from "@/lib/i18n";
+import { isLiveStatus, isFinishedStatus } from "@/lib/status";
 
 interface Props {
   result: PredictResponse;
@@ -48,18 +49,6 @@ function scoreWinnerColor(a: number, b: number): string {
 function formatPct(value: number): string {
   return `${Number((value * 100).toFixed(2))}%`;
 }
-
-// Estados con el partido en curso / ya jugado. Definen qué mensaje mostrar
-// cuando no hay formación: en vivo o finalizado NO deben decir "se publican ~1h
-// antes" (ya arrancó). Se tipan como string para tolerar variantes del backend.
-const LIVE_STATUSES = new Set<string>([
-  "en juego",
-  "STATUS_FIRST_HALF",
-  "STATUS_SECOND_HALF",
-  "descanso",
-  "STATUS_HALFTIME",
-]);
-const FINISHED_STATUSES = new Set<string>(["finalizado", "STATUS_FULL_TIME"]);
 
 function WinnerLegend({ teamA, teamB }: { teamA: string; teamB: string }) {
   const { t } = useLanguage();
@@ -1019,6 +1008,77 @@ function MatchGoals({
   );
 }
 
+// ─── KnockoutOutlook ──────────────────────────────────────────────────────────
+// Bloque de penales (eliminatoria): el título lleva la chance de que el cruce se
+// defina por penales entre paréntesis, y debajo, quién avanza la llave como barra
+// dividida (tug-of-war, A desde la izquierda / B desde la derecha; p_advance_* suman
+// ≈1). Mismo lenguaje de color que el 1X2.
+function KnockoutOutlook({
+  teamA,
+  teamB,
+  flagA,
+  flagB,
+  pAdvanceA,
+  pAdvanceB,
+  pPenalties,
+}: {
+  teamA: string;
+  teamB: string;
+  flagA: string;
+  flagB: string;
+  pAdvanceA: number;
+  pAdvanceB: number;
+  pPenalties: number | null;
+}) {
+  const { t } = useLanguage();
+  // Anchos de la barra normalizados a 100% (el backend suma ≈1; guardamos contra
+  // a+b=0 para no dividir por cero y caer a un 50/50 neutro).
+  const total = pAdvanceA + pAdvanceB;
+  const aShare = total > 0 ? (pAdvanceA / total) * 100 : 50;
+
+  return (
+    <div>
+      {/* Título con la chance de que el cruce se defina por penales entre paréntesis */}
+      <p className="text-ink-subtle mb-3 text-xs font-semibold tracking-widest uppercase">
+        {t.result.knockoutHeading}
+        {pPenalties != null && (
+          <span className="text-ink"> ({formatPct(pPenalties)})</span>
+        )}
+      </p>
+
+      {/* Equipos a cada extremo de la barra */}
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <FlagImage iso2={flagA} name={teamA} size="xs" />
+          <span className="text-ink truncate text-sm font-medium">{teamA}</span>
+        </div>
+        <div className="flex min-w-0 items-center justify-end gap-2">
+          <span className="text-ink truncate text-sm font-medium">{teamB}</span>
+          <FlagImage iso2={flagB} name={teamB} size="xs" />
+        </div>
+      </div>
+
+      {/* Barra dividida: A crece desde la izquierda, B desde la derecha */}
+      <div
+        role="img"
+        aria-label={`${t.result.advancesTeamLabel(teamA)} ${formatPct(
+          pAdvanceA
+        )}, ${t.result.advancesTeamLabel(teamB)} ${formatPct(pAdvanceB)}`}
+        className="bg-line flex h-3 w-full overflow-hidden rounded-full"
+      >
+        <div style={{ width: `${aShare}%`, backgroundColor: TEAM_A }} />
+        <div style={{ width: `${100 - aShare}%`, backgroundColor: TEAM_B }} />
+      </div>
+
+      {/* Porcentajes bajo cada extremo */}
+      <div className="mt-1.5 flex items-center justify-between text-sm font-bold">
+        <span style={{ color: TEAM_A }}>{formatPct(pAdvanceA)}</span>
+        <span style={{ color: TEAM_B }}>{formatPct(pAdvanceB)}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function PredictionResult({
   result,
   matchStatus,
@@ -1108,9 +1168,9 @@ export default function PredictionResult({
   // Mensaje cuando un equipo no tiene XI: pre-partido informa el horario de
   // publicación; en vivo o finalizado, "no disponible" (no el de pre-partido).
   const lineupPendingNote =
-    matchStatus && LIVE_STATUSES.has(matchStatus)
+    matchStatus && isLiveStatus(matchStatus)
       ? t.result.lineupUnavailableLive
-      : matchStatus && FINISHED_STATUSES.has(matchStatus)
+      : matchStatus && isFinishedStatus(matchStatus)
         ? t.result.lineupUnavailableFinished
         : t.result.lineupPendingNote;
 
@@ -1120,8 +1180,8 @@ export default function PredictionResult({
   // los programados vienen 0–0). El marcador en el hero se muestra en vivo o
   // finalizado; los enriquecimientos de comparación, SOLO finalizados ("lo
   // definido es lo que ya se jugó"): en vivo nada está decidido todavía.
-  const isLive = matchStatus != null && LIVE_STATUSES.has(matchStatus);
-  const isFinished = matchStatus != null && FINISHED_STATUSES.has(matchStatus);
+  const isLive = matchStatus != null && isLiveStatus(matchStatus);
+  const isFinished = matchStatus != null && isFinishedStatus(matchStatus);
   const hasStarted = isLive || isFinished;
 
   // Crónica por reglas en finalizados: trae los datos del partido de ESPN (matcheo
@@ -1380,11 +1440,28 @@ export default function PredictionResult({
         </div>
       )}
 
+      {/* Eliminatoria: el cruce se define por penales / quién avanza. Va primero,
+          como titular de la llave: "quién avanza" es la pregunta central de una
+          eliminatoria, y así los bloques de goles (1X2 → xG → marcadores) quedan juntos. */}
+      {is_knockout && p_advance_a != null && p_advance_b != null && (
+        <KnockoutOutlook
+          teamA={team_a_es}
+          teamB={team_b_es}
+          flagA={flag_a}
+          flagB={flag_b}
+          pAdvanceA={p_advance_a}
+          pAdvanceB={p_advance_b}
+          pPenalties={p_penalties}
+        />
+      )}
+
       {/* Probabilidades 1X2. En finalizados se resalta el desenlace real (outline +
           "real") y se atenúan los otros; en el resto, las tres planas. */}
       <div>
         <p className="text-ink-subtle mb-4 text-xs font-semibold tracking-widest uppercase">
-          {t.result.probabilitiesAt90}
+          {is_knockout
+            ? t.result.probabilitiesKnockout
+            : t.result.probabilitiesAt90}
         </p>
         <div className="space-y-4">
           {(
@@ -1476,49 +1553,6 @@ export default function PredictionResult({
         actualB={actualB}
         compare={compare}
       />
-
-      {is_knockout && p_advance_a != null && p_advance_b != null && (
-        <div className="space-y-3">
-          <div className="flex gap-3">
-            <div
-              className="flex-1 rounded-xl p-4 text-center"
-              style={{ backgroundColor: `${TEAM_A}18` }}
-            >
-              <p
-                className="mb-1 text-xs font-semibold tracking-widest uppercase"
-                style={{ color: TEAM_A }}
-              >
-                {t.result.advancesTeamLabel(team_a_es)}
-              </p>
-              <p className="text-2xl font-bold" style={{ color: TEAM_A }}>
-                {formatPct(p_advance_a)}
-              </p>
-            </div>
-            <div
-              className="flex-1 rounded-xl p-4 text-center"
-              style={{ backgroundColor: `${TEAM_B}18` }}
-            >
-              <p
-                className="mb-1 text-xs font-semibold tracking-widest uppercase"
-                style={{ color: TEAM_B }}
-              >
-                {t.result.advancesTeamLabel(team_b_es)}
-              </p>
-              <p className="text-2xl font-bold" style={{ color: TEAM_B }}>
-                {formatPct(p_advance_b)}
-              </p>
-            </div>
-          </div>
-          {p_penalties != null && (
-            <p className="text-ink-muted text-center text-xs">
-              {t.result.penaltiesProbability}{" "}
-              <span className="text-ink font-semibold">
-                {formatPct(p_penalties)}
-              </span>
-            </p>
-          )}
-        </div>
-      )}
 
       <div className="bg-canvas rounded-xl px-5 py-4">
         <p className="text-ink-subtle mb-2 text-xs font-semibold tracking-widest uppercase">
