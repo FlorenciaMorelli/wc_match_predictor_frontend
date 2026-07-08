@@ -13,6 +13,7 @@ import type {
   PredictResponse,
   Team,
 } from "@/types";
+import { canonicalRound } from "@/lib/rounds";
 
 // Error tipado por causa: el cliente decide qué tarjeta mostrar según `kind`.
 // offline = fetch rechaza (sin red) · waking = 503 (predictor arrancando) ·
@@ -92,9 +93,13 @@ export async function fetchTeams(): Promise<Team[]> {
 const FIXTURE_INCLUDE_PAST = 40;
 
 export async function fetchFixture(daysAhead = 10): Promise<FixtureMatch[]> {
-  return apiFetch<FixtureMatch[]>(
+  const matches = await apiFetch<FixtureMatch[]>(
     `/api/fixture?days_ahead=${daysAhead}&include_past=${FIXTURE_INCLUDE_PAST}`
   );
+  // Canonicalizamos la ronda en la frontera: el backend manda slugs inconsistentes
+  // (`quarterfinals` sin guión vs `round-of-32` con guión) y todo lo de abajo
+  // (segmentos, labels i18n) asume la forma canónica con guión.
+  return matches.map((m) => ({ ...m, round: canonicalRound(m.round) }));
 }
 
 // ---------------------------------------------------------------------------

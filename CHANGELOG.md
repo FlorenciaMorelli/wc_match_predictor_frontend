@@ -5,6 +5,18 @@ Todos los cambios relevantes de este proyecto se documentan acá.
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 adhiere a [SemVer](https://semver.org/lang/es/). Cada versión corresponde a un tag `vX.Y.Z`.
 
+## [0.11.1] — 2026-07-08
+
+### Fixed
+
+- **Cuartos de final no se visualizaban** en el fixture (`lib/rounds.ts` · `canonicalRound`, NUEVO;
+  aplicado en `lib/api.ts` · `fetchFixture`). El backend manda slugs de ronda inconsistentes —las
+  eliminatorias tempranas con guión (`round-of-32`, `round-of-16`) pero los cuartos sin guión
+  (`quarterfinals`)—, así que el filtro por ronda no matcheaba la forma canónica `quarter-finals` y la
+  pestaña quedaba vacía (placeholder "Por definir"), además de fallar el label i18n. Ahora la ronda se
+  canonicaliza en la frontera de la API, con alias también para `semifinals` y `thirdplace` por si el
+  backend los manda igual de inconsistentes en rondas futuras.
+
 ## [0.11.0] — 2026-06-29
 
 ### Added
