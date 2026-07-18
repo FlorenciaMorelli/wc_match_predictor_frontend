@@ -34,7 +34,30 @@ describe("canonicalRound", () => {
     expect(canonicalRound("quarterfinal")).toBe("quarter-finals");
     expect(canonicalRound("semifinals")).toBe("semi-finals");
     expect(canonicalRound("semifinal")).toBe("semi-finals");
+  });
+
+  it("mapea las variantes de tercer puesto a la forma canónica", () => {
+    expect(canonicalRound("3rd-place-match")).toBe("third-place");
+    expect(canonicalRound("3rd-place")).toBe("third-place");
+    expect(canonicalRound("third-place-match")).toBe("third-place");
     expect(canonicalRound("thirdplace")).toBe("third-place");
+  });
+
+  // Vocabulario real del backend, verificado contra `/api/fixture`. Cada slug
+  // que manda tiene que caer en una ronda que el fixture sepa renderizar.
+  it("canonicaliza el vocabulario real del backend", () => {
+    const BACKEND_ROUNDS: Record<string, string> = {
+      "group-stage": "group-stage",
+      "round-of-32": "round-of-32",
+      "round-of-16": "round-of-16",
+      quarterfinals: "quarter-finals",
+      semifinals: "semi-finals",
+      "3rd-place-match": "third-place",
+      final: "final",
+    };
+    for (const [backend, canonical] of Object.entries(BACKEND_ROUNDS)) {
+      expect(canonicalRound(backend)).toBe(canonical);
+    }
   });
 
   it("normaliza mayúsculas y espacios antes de mapear", () => {
