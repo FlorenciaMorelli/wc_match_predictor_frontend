@@ -5,6 +5,18 @@ Todos los cambios relevantes de este proyecto se documentan acá.
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado
 adhiere a [SemVer](https://semver.org/lang/es/). Cada versión corresponde a un tag `vX.Y.Z`.
 
+## [0.11.2] — 2026-07-18
+
+### Fixed
+
+- **El partido por el tercer puesto no se visualizaba** en el fixture (`lib/rounds.ts` ·
+  `ROUND_ALIASES`). El backend manda esa ronda como `3rd-place-match`, que no estaba en el mapa de
+  alias —el alias existente era `thirdplace`, una forma que el backend nunca usa—, así que la ronda
+  no canonicalizaba a `third-place` y la pestaña se descartaba por quedar sin partidos. Se agregó
+  `3rd-place-match` (más las variantes `3rd-place` y `third-place-match`) y se fijó en tests el
+  vocabulario real del backend, verificado contra `/api/fixture`: `group-stage`, `round-of-32`,
+  `round-of-16`, `quarterfinals`, `semifinals`, `3rd-place-match`, `final`.
+
 ## [0.11.1] — 2026-07-08
 
 ### Fixed

@@ -6,17 +6,23 @@
 // El valor de `round` que el backend usa para la fase de grupos.
 const GROUP_STAGE = "group-stage";
 
-// El backend es inconsistente con los slugs de ronda: manda las eliminatorias
-// tempranas con guión (`round-of-32`, `round-of-16`) pero las finales sin guión
-// (`quarterfinals`, y presumiblemente `semifinals`). El frontend usa una única
-// forma canónica con guión para agrupar en pestañas y buscar el label i18n, así
-// que mapeamos cada variante conocida a su slug canónico. Lo desconocido pasa
-// tal cual (ya en minúsculas y sin espacios) para no romper rondas futuras.
+// El backend es inconsistente con los slugs de ronda. Vocabulario real
+// (verificado contra `/api/fixture`): `group-stage`, `round-of-32`,
+// `round-of-16`, `quarterfinals`, `semifinals`, `3rd-place-match`, `final` —
+// o sea, las eliminatorias tempranas con guión, las finales sin guión, y el
+// tercer puesto con su propia forma con número y sufijo `-match`. El frontend
+// usa una única forma canónica con guión para agrupar en pestañas y buscar el
+// label i18n, así que mapeamos cada variante conocida a su slug canónico. Lo
+// desconocido pasa tal cual (ya en minúsculas y sin espacios) para no romper
+// rondas futuras.
 const ROUND_ALIASES: Record<string, string> = {
   quarterfinals: "quarter-finals",
   quarterfinal: "quarter-finals",
   semifinals: "semi-finals",
   semifinal: "semi-finals",
+  "3rd-place-match": "third-place",
+  "3rd-place": "third-place",
+  "third-place-match": "third-place",
   thirdplace: "third-place",
 };
 
